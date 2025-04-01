@@ -10,7 +10,7 @@ import org.joinmastodon.android.model.Status;
 import java.util.List;
 
 public class GetPublicTimeline extends MastodonAPIRequest<List<Status>>{
-	public GetPublicTimeline(boolean local, boolean remote, String maxID, String minID, int limit, String sinceID){
+	public GetPublicTimeline(boolean local, boolean remote, String maxID, String minID, int limit, String sinceID, /* MOSHIDON: */ String replyVisibility){
 		super(HttpMethod.GET, "/timelines/public", new TypeToken<>(){});
 		if(local)
 			addQueryParameter("local", "true");
@@ -25,5 +25,8 @@ public class GetPublicTimeline extends MastodonAPIRequest<List<Status>>{
 		if(limit>0)
 			addQueryParameter("limit", limit+"");
 		removeUnsupportedItems=true;
+		// MOSHIDON:
+		if(replyVisibility != null)
+			addQueryParameter("reply_visibility", replyVisibility);
 	}
 }
