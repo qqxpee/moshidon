@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -45,6 +46,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -354,6 +356,19 @@ public class AccountSession{
 			}
 			return false;
 		});
+	}
+
+	// MOSHIDON: there might be a bunch of crashes if I don't put this back here
+	public Optional<Instance> getInstance() {
+		return Optional.ofNullable(AccountSessionManager.getInstance().getInstanceInfo(domain));
+	}
+
+	// MOSHIDON: some weird methods we have ain't we
+	public Uri getInstanceUri() {
+		return new Uri.Builder()
+				.scheme("https")
+				.authority(getInstance().map(i -> i.normalizedUri).orElse(domain))
+				.build();
 	}
 
 	public void updateAccountInfo(){
