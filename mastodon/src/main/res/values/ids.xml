@@ -37,4 +37,9 @@
 	<item name="button_progress_orig_color" type="id"/>
 	<item name="list_item_view_holder" type="id"/>
 	<item name="current_snackbar" type="id"/>
+
+<!--	MOSHIDON: our edit timelines stuff-->
+	<item name="menu_add_timeline" type="id" />
+	<item name="menu_back" type="id" />
+	<item name="menu_add_local_timelines" type="id" />
 </resources>
