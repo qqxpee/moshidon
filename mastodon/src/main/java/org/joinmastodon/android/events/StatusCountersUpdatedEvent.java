@@ -6,6 +6,10 @@ public class StatusCountersUpdatedEvent{
 	public String id;
 	public long favorites, reblogs, replies;
 	public boolean favorited, reblogged, bookmarked;
+
+	// MOSHIDON:
+	public boolean pinned;
+
 	public final CounterType type;
 
 	public StatusCountersUpdatedEvent(Status s, CounterType type){
@@ -15,7 +19,10 @@ public class StatusCountersUpdatedEvent{
 		reblogs=s.reblogsCount;
 		reblogged=s.reblogged;
 		replies=s.repliesCount;
-		bookmarked=s.bookmarked;
+
+		// MOSHIDON:
+		pinned=s.pinned;bookmarked=s.bookmarked;
+
 		this.type=type;
 	}
 
@@ -24,5 +31,6 @@ public class StatusCountersUpdatedEvent{
 		REBLOGS,
 		REPLIES,
 		BOOKMARKS
+
 	}
 }
