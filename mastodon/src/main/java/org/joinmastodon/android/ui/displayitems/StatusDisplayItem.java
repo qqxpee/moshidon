@@ -55,6 +55,13 @@ public abstract class StatusDisplayItem{
 	public static final int FLAG_NO_IN_REPLY_TO=1 << 5;
 	public static final int FLAG_IS_QUOTE=1 << 6;
 
+	// MOSHIDON:
+	public static final int FLAG_NO_TRANSLATE=1 << 7;
+	public static final int FLAG_NO_EMOJI_REACTIONS=1 << 8;
+	public static final int FLAG_IS_FOR_QUOTE=1 << 9;
+	public static final int FLAG_NO_MEDIA_PREVIEW=1 << 10;
+	public static final int FLAG_INSET=11;
+
 	public StatusDisplayItem(String parentID, Callbacks callbacks, Context context){
 		this.parentID=parentID;
 		this.callbacks=callbacks;
