@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.Rect;
+import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -21,6 +22,7 @@ import org.joinmastodon.android.api.session.AccountSessionManager;
 import org.joinmastodon.android.events.FinishReportFragmentsEvent;
 import org.joinmastodon.android.fragments.StatusListFragment;
 import org.joinmastodon.android.model.Account;
+import org.joinmastodon.android.model.FilterContext;
 import org.joinmastodon.android.model.Instance;
 import org.joinmastodon.android.model.Relationship;
 import org.joinmastodon.android.model.ReportReason;
@@ -262,5 +264,16 @@ public class ReportReasonChoiceFragment extends StatusListFragment{
 		super.putRelationship(id, rel);
 		if(id.equals(reportAccount.id))
 			relationship=rel;
+	}
+
+	// MOSHIDON:
+	@Override
+	protected FilterContext getFilterContext(){
+		return null;
+	}
+
+	@Override
+	public Uri getWebUri(Uri.Builder base){
+		return null;
 	}
 }
