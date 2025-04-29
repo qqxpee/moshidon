@@ -100,6 +100,9 @@ public abstract class StatusDisplayItem{
 			case FOLLOW_REQUEST_ACTIONS -> new FollowRequestActionsDisplayItem.Holder(activity, parent);
 			case QUOTE_ERROR -> new QuoteErrorStatusDisplayItem.Holder(activity, parent);
 			case NESTED_QUOTE -> new NestedQuoteStatusDisplayItem.Holder(activity, parent);
+			// MOSHIDON:
+			case DUMMY -> new DummyStatusDisplayItem.Holder(activity);
+			case EMOJI_REACTIONS -> new EmojiReactionsStatusDisplayItem.Holder(activity, parent);
 		};
 	}
 
@@ -288,7 +291,10 @@ public abstract class StatusDisplayItem{
 		FOLLOW_REQUEST_ACTIONS,
 		HEADER_COMPACT,
 		QUOTE_ERROR,
-		NESTED_QUOTE
+		NESTED_QUOTE,
+		// MOSHIDON:
+		DUMMY,
+		EMOJI_REACTIONS
 	}
 
 	public static abstract class Holder<T> extends BindableViewHolder<T> implements UsableRecyclerView.DisableableClickable{
