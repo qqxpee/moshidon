@@ -15,6 +15,7 @@ import org.joinmastodon.android.fragments.ThreadFragment;
 import org.joinmastodon.android.model.Account;
 import org.joinmastodon.android.model.Attachment;
 import org.joinmastodon.android.model.DisplayItemsParent;
+import org.joinmastodon.android.model.FilterContext;
 import org.joinmastodon.android.model.FilterResult;
 import org.joinmastodon.android.model.Poll;
 import org.joinmastodon.android.model.Quote;
@@ -104,6 +105,11 @@ public abstract class StatusDisplayItem{
 		if(!addFooter)
 			flags|=FLAG_NO_FOOTER;
 		return buildItems(fragment, fragment.getActivity(), status, accountID, parentObject, knownAccounts, flags);
+	}
+
+	// MOSHIDON: may the overload not make me sad later
+	public static ArrayList<StatusDisplayItem> buildItems(BaseStatusListFragment<?> fragment, Status status, String accountID, DisplayItemsParent parentObject, Map<String, Account> knownAccounts, int flags){
+		return buildItems(fragment, status, accountID, parentObject, knownAccounts, null, flags);
 	}
 
 	public static ArrayList<StatusDisplayItem> buildItems(Callbacks callbacks, Context context, Status status, String accountID, DisplayItemsParent parentObject, Map<String, Account> knownAccounts, int flags){
