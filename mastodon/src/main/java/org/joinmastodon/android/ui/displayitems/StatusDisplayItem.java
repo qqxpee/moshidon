@@ -62,6 +62,10 @@ public abstract class StatusDisplayItem{
 	public static final int FLAG_NO_MEDIA_PREVIEW=1 << 10;
 	public static final int FLAG_INSET=11;
 
+	// MOSHIDON: FIXME: this may not be needed anymore
+	public boolean inset; // aka "a quote toot" or notifications
+	public Status status; // for quote toots and other things. May this not break
+
 	public StatusDisplayItem(String parentID, Callbacks callbacks, Context context){
 		this.parentID=parentID;
 		this.callbacks=callbacks;
