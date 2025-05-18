@@ -19,7 +19,7 @@ import org.joinmastodon.android.ui.displayitems.FollowRequestActionsDisplayItem;
 import org.joinmastodon.android.ui.displayitems.InlineStatusStatusDisplayItem;
 import org.joinmastodon.android.ui.displayitems.NotificationHeaderStatusDisplayItem;
 import org.joinmastodon.android.ui.displayitems.NotificationWithButtonStatusDisplayItem;
-import org.joinmastodon.android.ui.displayitems.ReblogOrReplyLineStatusDisplayItem;
+import org.joinmastodon.android.ui.displayitems.ReblogOrReplyLineCustomStatusDisplayItem;
 import org.joinmastodon.android.ui.displayitems.StatusDisplayItem;
 import org.parceler.Parcels;
 
@@ -62,11 +62,13 @@ public abstract class BaseNotificationsListFragment extends BaseStatusListFragme
 			}
 		}else if(n.notification.type==NotificationType.STATUS){
 			if(n.status!=null)
+				// FIXME: use our custom implementation
 				titleItem=new ReblogOrReplyLineStatusDisplayItem(n.getID(), this, getActivity(), getString(R.string.user_just_posted), n.status.account, R.drawable.ic_notifications_wght700fill1_20px, accountID);
 			else
 				titleItem=null;
 		}else if(n.notification.type==NotificationType.QUOTE){
 			if(n.status!=null)
+				// FIXME: use our custom implementation
 				titleItem=new ReblogOrReplyLineStatusDisplayItem(n.getID(), this, getActivity(), getString(R.string.user_quoted_post), n.status.account, R.drawable.ic_format_quote_wght700fill1_20px, accountID);
 			else
 				titleItem=null;
