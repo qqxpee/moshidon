@@ -2,6 +2,7 @@ package org.joinmastodon.android.fragments;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 
@@ -64,5 +65,10 @@ public class FeaturedHashtagsListFragment extends BaseStatusListFragment<Hashtag
 	@Override
 	protected Status asStatus(Hashtag s){
 		return null;
+	}
+
+	@Override
+	public Uri getWebUri(Uri.Builder base){
+		return null; // TODO
 	}
 }
