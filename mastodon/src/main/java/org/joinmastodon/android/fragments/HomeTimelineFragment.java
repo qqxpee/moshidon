@@ -236,7 +236,7 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 						});
 			}
 			case LOCAL -> {
-				currentRequest=new GetPublicTimeline(true, false, offset>0 ? maxID : null, null, count, null)
+				currentRequest=new GetPublicTimeline(true, false, offset>0 ? maxID : null, null, count, null, /* MOSHIDON */ null)
 						.setCallback(new SimpleCallback<>(this){
 							@Override
 							public void onSuccess(List<Status> result){
@@ -331,7 +331,8 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 			@Override
 			public boolean onPreDraw(){
 				scroller.getViewTreeObserver().removeOnPreDrawListener(this);
-				bottomOverlays.setTranslationY(scroller.getScrollY()-getToolbar().getHeight());
+				// MOSHIDON
+//				bottomOverlays.setTranslationY(scroller.getScrollY()-getToolbar().getHeight());
 				return true;
 			}
 		});
@@ -430,7 +431,9 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 		prependItems(Collections.singletonList(status), true);
 	}
 
-	private void onFabClick(View v){
+	// MOSHIDON:
+	@Override
+	public void onFabClick(View v){
 		Bundle args=new Bundle();
 		args.putString("account", accountID);
 		Nav.go(getActivity(), ComposeFragment.class, args);
@@ -652,7 +655,7 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 	private void loadAdditionalPosts(String maxID, String minID, int limit, String sinceID, Callback<List<Status>> callback){
 		MastodonAPIRequest<List<Status>> req=switch(listMode){
 			case FOLLOWING -> new GetHomeTimeline(maxID, minID, limit, sinceID);
-			case LOCAL -> new GetPublicTimeline(true, false, maxID, minID, limit, sinceID);
+			case LOCAL -> new GetPublicTimeline(true, false, maxID, minID, limit, sinceID, /* MOSHIDON */ null);
 			case LIST -> new GetListTimeline(currentList.id, maxID, minID, limit, sinceID);
 		};
 		currentRequest=req;
@@ -702,9 +705,10 @@ public class HomeTimelineFragment extends StatusListFragment implements ToolbarD
 		ddlp.topMargin=ddlp.bottomMargin=V.dp(8);
 		logoWrap.addView(listsDropdown, ddlp);
 
-		Toolbar toolbar=getToolbar();
-		toolbar.addView(logoWrap, new Toolbar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-		toolbar.setContentInsetsRelative(V.dp(16), 0);
+		// MOSHIDON: Moshidon does not use this fragment, so we just commented out everything that caused compile and runtime errors somehow
+//		Toolbar toolbar=getToolbar();
+//		toolbar.addView(logoWrap, new Toolbar.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+//		toolbar.setContentInsetsRelative(V.dp(16), 0);
 	}
 
 	private void showNewPostsButton(){
