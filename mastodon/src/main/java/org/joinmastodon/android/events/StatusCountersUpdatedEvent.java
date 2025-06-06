@@ -21,7 +21,8 @@ public class StatusCountersUpdatedEvent{
 		replies=s.repliesCount;
 
 		// MOSHIDON:
-		pinned=s.pinned;bookmarked=s.bookmarked;
+		pinned=s.pinned;
+		bookmarked=s.bookmarked;
 
 		this.type=type;
 	}
