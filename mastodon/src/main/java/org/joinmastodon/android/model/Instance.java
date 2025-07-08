@@ -171,6 +171,9 @@ public abstract class Instance extends BaseModel{
 		public PollsConfiguration polls;
 		public URLsConfiguration urls;
 		public TimelineAccessConfiguration timelineAccess;
+
+		// MOSHIDON: the reactions stuff
+		public ReactionsConfiguration reactions;
 	}
 
 	@Parcel
@@ -227,6 +230,13 @@ public abstract class Instance extends BaseModel{
 		AUTHENTICATED,
 		@SerializedName("disabled")
 		DISABLED
+	}
+
+	// MOSHIDON: the reactions stuff
+	@Parcel
+	public static class ReactionsConfiguration {
+		public int maxReactions;
+		public String defaultReaction;
 	}
 
 	// MOSHIDON: we check for translation support, so this needs to be here
