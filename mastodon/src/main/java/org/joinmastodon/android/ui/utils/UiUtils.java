@@ -55,6 +55,7 @@ import android.view.MenuItem;
 import android.view.SubMenu;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewPropertyAnimator;
 import android.view.WindowInsets;
 import android.webkit.MimeTypeMap;
 import android.widget.Button;
@@ -161,6 +162,7 @@ public class UiUtils{
 
 	// MOSHIDON:
 	public static int SCROLL_TO_TOP_DELTA;
+	public static final float ALPHA_PRESSED=0.55f;
 
 	private UiUtils(){}
 
@@ -1358,6 +1360,7 @@ public class UiUtils{
 		sheet.show();
 	}
 
+
 	// MOSHIDON:
 	@FunctionalInterface
 	public interface InteractionPerformer {
@@ -1503,4 +1506,17 @@ public class UiUtils{
 			Log.e("reduceSwipeSensitivity", Log.getStackTraceString(ex));
 		}
 	}
+
+	public static void opacityIn(View v){
+		v.animate().alpha(1).setDuration(400).setInterpolator(CubicBezierInterpolator.DEFAULT).start();
+	}
+
+	public static void opacityOut(View v){
+		opacityOut(v, ALPHA_PRESSED).start();
+	}
+
+	public static ViewPropertyAnimator opacityOut(View v, float alpha){
+		return v.animate().alpha(alpha).setDuration(300).setInterpolator(CubicBezierInterpolator.DEFAULT);
+	}
+
 }
