@@ -16,6 +16,7 @@ import org.joinmastodon.android.model.EmojiCategory;
 import org.joinmastodon.android.model.EmojiReaction;
 import org.joinmastodon.android.model.Instance;
 import org.joinmastodon.android.model.Status;
+import org.joinmastodon.android.model.StatusPrivacy;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -151,7 +152,8 @@ public class StatusInteractionController{
 		E.post(new EmojiReactionsUpdatedEvent(status.id, reactions, false, null));
 	}
 
-	public void setReblogged(Status status, boolean reblogged){
+	// MOSHIDON: we use more parameters
+	public void setReblogged(Status status, boolean reblogged, StatusPrivacy visibility, Consumer<Status> cb){
 		if(!Looper.getMainLooper().isCurrentThread())
 			throw new IllegalStateException("Can only be called from main thread");
 
@@ -159,13 +161,15 @@ public class StatusInteractionController{
 		if(current!=null){
 			current.cancel();
 		}
-		SetStatusReblogged req=(SetStatusReblogged) new SetStatusReblogged(status.id, reblogged)
+		// MOSHIDON: more parameters
+		SetStatusReblogged req=(SetStatusReblogged) new SetStatusReblogged(status.id, reblogged, visibility)
 				.setCallback(new Callback<>(){
 					@Override
 					public void onSuccess(Status result){
 						runningReblogRequests.remove(status.id);
 
 						// MOSHIDON:
+						cb.accept(result);
 						if(updateCounters) E.post(new StatusCountersUpdatedEvent(result, StatusCountersUpdatedEvent.CounterType.REBLOGS));
 					}
 
@@ -178,6 +182,10 @@ public class StatusInteractionController{
 							status.reblogsCount--;
 						else
 							status.reblogsCount++;
+
+						// MOSHIDON
+						cb.accept(status);
+
 						E.post(new StatusCountersUpdatedEvent(status, StatusCountersUpdatedEvent.CounterType.REBLOGS));
 					}
 				})

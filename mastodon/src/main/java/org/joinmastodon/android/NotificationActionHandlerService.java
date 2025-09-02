@@ -134,7 +134,7 @@ public class NotificationActionHandlerService extends Service{
 				prevActionIntent=null;
 			}
 			runningRequestCount++;
-			new SetStatusReblogged(postID, true)
+			new SetStatusReblogged(postID, true, StatusPrivacy.PUBLIC)
 					.setCallback(new Callback<>(){
 						@Override
 						public void onSuccess(Status result){
