@@ -1,12 +1,14 @@
 package org.joinmastodon.android.ui.displayitems;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +20,7 @@ import android.widget.TextView;
 
 import org.joinmastodon.android.GlobalUserPreferences;
 import org.joinmastodon.android.R;
+import org.joinmastodon.android.api.session.AccountSession;
 import org.joinmastodon.android.api.session.AccountSessionManager;
 import org.joinmastodon.android.fragments.ComposeFragment;
 import org.joinmastodon.android.fragments.account_list.StatusFavoritesListFragment;
@@ -29,8 +32,11 @@ import org.joinmastodon.android.model.Status;
 import org.joinmastodon.android.model.StatusPrivacy;
 import org.joinmastodon.android.model.viewmodel.ListItem;
 import org.joinmastodon.android.ui.sheets.ListItemsSheet;
+import org.joinmastodon.android.ui.M3AlertDialogBuilder;
 import org.joinmastodon.android.ui.utils.UiUtils;
 import org.parceler.Parcels;
+
+import java.util.function.Consumer;
 
 import me.grishka.appkit.Nav;
 import me.grishka.appkit.utils.V;
@@ -221,19 +227,125 @@ public class FooterStatusDisplayItem extends StatusDisplayItem{
 			UiUtils.openSystemShareSheet(v.getContext(), item.status);
 		}
 
+		private void boostConsumer(View v, Status r) {
+			UiUtils.opacityIn(v);
+			bindButton(boost, r.reblogsCount);
+		}
+
+// 		private boolean onBoostLongClick(View v){
+// 			MenuItem boost=boostLongTapMenu.getMenu().findItem(R.id.boost);
+// 			boost.setTitle(item.status.reblogged ? R.string.undo_reblog : R.string.button_reblog);
+// 			boostLongTapMenu.show();
+// 			return true;
+// 		}
+
 		private boolean onBoostLongClick(View v){
-			MenuItem boost=boostLongTapMenu.getMenu().findItem(R.id.boost);
-			boost.setTitle(item.status.reblogged ? R.string.undo_reblog : R.string.button_reblog);
-			boostLongTapMenu.show();
+			if(item.status.preview) return false;
+			Context ctx = itemView.getContext();
+			View menu = LayoutInflater.from(ctx).inflate(R.layout.item_boost_menu, null);
+			Dialog dialog = new M3AlertDialogBuilder(ctx).setView(menu).create();
+			AccountSession session = AccountSessionManager.getInstance().getAccount(item.accountID);
+
+			Consumer<StatusPrivacy> doReblog = (visibility) -> {
+				UiUtils.opacityOut(v);
+				applyInteraction(v,status -> {
+					session.getStatusInteractionController()
+							.setReblogged(status, !status.reblogged, visibility, r->boostConsumer(v, r));
+					boost.setSelected(status.reblogged);
+					dialog.dismiss();
+				});
+			};
+
+			View separator = menu.findViewById(R.id.separator);
+			TextView reblogHeader = menu.findViewById(R.id.reblog_header);
+			TextView undoReblog = menu.findViewById(R.id.delete_reblog);
+			TextView reblogAs = menu.findViewById(R.id.reblog_as);
+			TextView itemPublic = menu.findViewById(R.id.vis_public);
+			TextView itemUnlisted = menu.findViewById(R.id.vis_unlisted);
+			TextView itemFollowers = menu.findViewById(R.id.vis_followers);
+
+			undoReblog.setVisibility(item.status.reblogged ? View.VISIBLE : View.GONE);
+			separator.setVisibility(item.status.reblogged ? View.GONE : View.VISIBLE);
+			reblogHeader.setVisibility(item.status.reblogged ? View.GONE : View.VISIBLE);
+			reblogAs.setVisibility(AccountSessionManager.getInstance().getLoggedInAccounts().size() > 1 ? View.VISIBLE : View.GONE);
+
+			itemPublic.setVisibility(item.status.reblogged ? View.GONE : View.VISIBLE);
+			itemUnlisted.setVisibility(item.status.reblogged ? View.GONE : View.VISIBLE);
+			itemFollowers.setVisibility(item.status.reblogged ? View.GONE : View.VISIBLE);
+
+			Drawable checkMark = ctx.getDrawable(R.drawable.ic_fluent_checkmark_circle_20_regular);
+			Drawable publicDrawable = ctx.getDrawable(R.drawable.ic_fluent_earth_24_regular);
+			Drawable unlistedDrawable = ctx.getDrawable(R.drawable.ic_fluent_lock_open_24_regular);
+			Drawable followersDrawable = ctx.getDrawable(R.drawable.ic_fluent_lock_closed_24_regular);
+
+			StatusPrivacy defaultVisibility = session.preferences != null ? session.preferences.postingDefaultVisibility : null;
+			itemPublic.setCompoundDrawablesWithIntrinsicBounds(publicDrawable, null, StatusPrivacy.PUBLIC.equals(defaultVisibility) ? checkMark : null, null);
+			itemUnlisted.setCompoundDrawablesWithIntrinsicBounds(unlistedDrawable, null, StatusPrivacy.UNLISTED.equals(defaultVisibility) ? checkMark : null, null);
+			itemFollowers.setCompoundDrawablesWithIntrinsicBounds(followersDrawable, null, StatusPrivacy.PRIVATE.equals(defaultVisibility) ? checkMark : null, null);
+
+			undoReblog.setOnClickListener(c->doReblog.accept(null));
+			itemPublic.setOnClickListener(c->doReblog.accept(StatusPrivacy.PUBLIC));
+			itemUnlisted.setOnClickListener(c->doReblog.accept(StatusPrivacy.UNLISTED));
+			itemFollowers.setOnClickListener(c->doReblog.accept(StatusPrivacy.PRIVATE));
+			reblogAs.setOnClickListener(c->{
+				dialog.dismiss();
+				UiUtils.pickInteractAs(v.getContext(),
+						item.accountID, item.status,
+						s -> s.reblogged,
+						(ic, status, consumer) -> ic.setReblogged(status, true, null, consumer), R.string.sk_reblog_as,
+						R.string.sk_reblogged_as,
+						R.string.sk_already_reblogged,
+						// TODO: replace once available: https://raw.githubusercontent.com/microsoft/fluentui-system-icons/main/android/library/src/main/res/drawable/ic_fluent_arrow_repeat_all_28_regular.xml
+						R.drawable.ic_fluent_arrow_repeat_all_24_regular
+				);
+			});
+
+			menu.findViewById(R.id.quote).setOnClickListener(c->{
+				dialog.dismiss();
+				UiUtils.opacityIn(v);
+				Bundle args=new Bundle();
+				args.putString("account", item.accountID);
+				Instance instance=AccountSessionManager.get(item.accountID).getInstance().get();
+				if(instance.isAkkoma() || instance.isIceshrimp()){
+					args.putParcelable("quote", Parcels.wrap(item.status));
+				}else{
+					StringBuilder prefilledText = new StringBuilder().append("\n\n");
+					String ownID = AccountSessionManager.getInstance().getAccount(item.accountID).self.id;
+					if (!item.status.account.id.equals(ownID)) prefilledText.append('@').append(item.status.account.acct).append(' ');
+					prefilledText.append(item.status.url);
+					args.putString("prefilledText", prefilledText.toString());
+					args.putInt("selectionStart", 0);
+				}
+				Nav.go(item.parentFragment.getActivity(), ComposeFragment.class, args);
+			});
+
+			dialog.show();
 			return true;
 		}
 
-		private boolean onFavoriteLongClick(View v){
-			MenuItem favorite=favoriteLongTapMenu.getMenu().findItem(R.id.favorite);
-			MenuItem bookmark=favoriteLongTapMenu.getMenu().findItem(R.id.bookmark);
-			favorite.setTitle(item.status.favourited ? R.string.undo_favorite : R.string.button_favorite);
-			bookmark.setTitle(item.status.bookmarked ? R.string.remove_bookmark : R.string.add_bookmark);
-			favoriteLongTapMenu.show();
+		private void applyInteraction(View v, Consumer<Status> interactionConsumer) {
+			if(!item.status.isRemote){
+				interactionConsumer.accept(item.status);
+				return;
+			}
+			UiUtils.lookupStatus(v.getContext(),
+					item.status, item.accountID, null,
+					interactionConsumer
+			);
+		}
+
+		private boolean onFavoriteLongClick(View v) {
+			if(item.status.preview) return false;
+			if (AccountSessionManager.getInstance().getLoggedInAccounts().size() < 2) return false;
+			UiUtils.pickInteractAs(v.getContext(),
+					item.accountID, item.status,
+					s -> s.favourited,
+					(ic, status, consumer) -> ic.setFavorited(status, true, consumer),
+					R.string.sk_favorite_as,
+					R.string.sk_favorited_as,
+					R.string.sk_already_favorited,
+					GlobalUserPreferences.likeIcon ? R.drawable.ic_fluent_heart_28_regular : R.drawable.ic_fluent_star_28_regular
+			);
 			return true;
 		}
 
