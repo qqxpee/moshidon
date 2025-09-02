@@ -206,7 +206,7 @@ public class FooterStatusDisplayItem extends StatusDisplayItem{
 		}
 
 		private void doBoost(){
-			AccountSessionManager.getInstance().getAccount(item.accountID).getStatusInteractionController().setReblogged(item.status, !item.status.reblogged);
+			AccountSessionManager.getInstance().getAccount(item.accountID).getStatusInteractionController().setReblogged(item.status, !item.status.reblogged, StatusPrivacy.PUBLIC, r->{});
 			boost.setSelected(item.status.reblogged);
 			bindButton(boost, item.status.reblogsCount);
 		}
