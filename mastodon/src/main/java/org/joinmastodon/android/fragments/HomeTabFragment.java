@@ -416,8 +416,12 @@ public class HomeTabFragment extends MastodonToolbarFragment implements Scrollab
 		hashtagsMenu = m.findItem(R.id.hashtags).getSubMenu();
 		listsMenu = m.findItem(R.id.lists).getSubMenu();
 
-		announcements.setVisible(!announcementsBadged);
-		announcementsAction.setVisible(announcementsBadged);
+		// MOSHIDON: for now announcements are broken
+//		announcements.setVisible(!announcementsBadged);
+//		announcementsAction.setVisible(announcementsBadged);
+		announcements.setVisible(false);
+		announcementsAction.setVisible(false);
+
 		settings.setVisible(!settingsBadged);
 		settingsAction.setVisible(settingsBadged);
 
