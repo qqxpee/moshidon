@@ -67,7 +67,8 @@ public class GlobalUserPreferences{
 	public static boolean showMediaPreview;
 	public static boolean removeTrackingParams;
 
-	private static SharedPreferences getPrefs(){
+	// MOSHIDON: we changed this to public, because otherwise we can't export the settings
+	public static SharedPreferences getPrefs(){
 		return MastodonApp.context.getSharedPreferences("global", Context.MODE_PRIVATE);
 	}
 
