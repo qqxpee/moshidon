@@ -85,7 +85,7 @@ import me.grishka.appkit.api.ErrorResponse;
 public class AccountSessionManager{
 	private static final String TAG="AccountSessionManager";
 	public static final String SCOPE="read write follow push";
-	public static final String REDIRECT_URI="moshidon-android-auth://callback";
+	public static final String REDIRECT_URI=getRedirectURI();
 	private static final int DB_VERSION=3;
 
 	private static final AccountSessionManager instance=new AccountSessionManager();
@@ -106,6 +106,17 @@ public class AccountSessionManager{
 
 	public static AccountSessionManager getInstance(){
 		return instance;
+	}
+
+	public static String getRedirectURI(){
+		StringBuilder builder=new StringBuilder();
+		builder.append("moshidon-android-");
+		if(BuildConfig.BUILD_TYPE.equals("debug") || BuildConfig.BUILD_TYPE.equals("nightly")){
+			builder.append(BuildConfig.BUILD_TYPE);
+			builder.append('-');
+		}
+		builder.append("auth://callback");
+		return builder.toString();
 	}
 
 	private AccountSessionManager(){

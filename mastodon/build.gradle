@@ -10,6 +10,7 @@ android {
 
 	compileSdk 35
 	defaultConfig {
+		manifestPlaceholders = [oAuthScheme:"moshidon-android-auth"]
 		applicationId "org.joinmastodon.android.moshinda"
 		minSdk 23
 		targetSdk 35
@@ -17,6 +18,30 @@ android {
 		versionName "2.11.9+fork.110.moshinda"
 		testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 		testBuildType "screenshotsUiTest"
+	}
+
+	signingConfigs {
+		nightly{
+			storeFile = file("keystore/nightly_keystore.jks")
+			storePassword System.getenv("SIGNING_STORE_PASSWORD")
+			if (storePassword == null) {
+				Properties properties = new Properties()
+				properties.load(project.rootProject.file('local.properties').newDataInputStream())
+				storePassword = properties.getProperty('SIGNING_STORE_PASSWORD')
+			}
+			keyAlias System.getenv("SIGNING_KEY_ALIAS")
+			if (keyAlias == null) {
+				Properties properties = new Properties()
+				properties.load(project.rootProject.file('local.properties').newDataInputStream())
+				keyAlias = properties.getProperty('SIGNING_KEY_ALIAS')
+			}
+			keyPassword System.getenv("SIGNING_KEY_PASSWORD")
+			if (keyPassword == null) {
+				Properties properties = new Properties()
+				properties.load(project.rootProject.file('local.properties').newDataInputStream())
+				keyPassword = properties.getProperty('SIGNING_KEY_PASSWORD')
+			}
+		}
 	}
 
 	buildTypes {
@@ -27,6 +52,9 @@ android {
 		}
 		debug{
 			debuggable true
+			versionNameSuffix '-debug'
+			applicationIdSuffix '.debug'
+			manifestPlaceholders = [oAuthScheme:"moshidon-android-debug-auth"]
 		}
 //		appcenterPrivateBeta{
 //			initWith release
@@ -40,6 +68,20 @@ android {
 //		}
 		githubRelease{
 			initWith release
+			versionNameSuffix '-github'
+		}
+		nightly{
+			if(System.getenv("CURRENT_DATE") != null){
+				versionNameSuffix '-nightly+@' + System.getenv("CURRENT_DATE")
+			} else {
+				Properties properties = new Properties()
+				properties.load(project.rootProject.file('local.properties').newDataInputStream())
+				versionNameSuffix '-nightly+@' + properties.getProperty('CURRENT_DATE')
+			}
+			applicationIdSuffix '.nightly'
+
+			signingConfig signingConfigs.nightly
+			manifestPlaceholders = [oAuthScheme:"moshidon-android-nightly-auth"]
 		}
 		githubDebug{
 			initWith debug
@@ -49,6 +91,14 @@ android {
 			// None of this makes sense, I know. Google enjoys making developers suffer for no good reason.
 			initWith debug
 			debuggable false
+		}
+		fdroidRelease {
+			initWith release
+			// TODO: readd vcsinfo
+			// vcsInfo.include true
+			// The F-droid build system doesn't like this at all for some reason.
+//			versionNameSuffix '-fdroid'
+//			signingConfig signingConfigs.release
 		}
 	}
 	compileOptions {
