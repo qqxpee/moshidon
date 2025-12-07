@@ -11,6 +11,7 @@ android {
 	compileSdk 35
 	defaultConfig {
 		manifestPlaceholders = [oAuthScheme:"moshidon-android-auth"]
+		archivesBaseName = "moshidon"
 		applicationId "org.joinmastodon.android.moshinda"
 		minSdk 23
 		targetSdk 35
