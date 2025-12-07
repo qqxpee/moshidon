@@ -562,10 +562,8 @@ public class CacheController{
 			if(oldVersion<3){
 				addTimeColumns(db);
 			}
-			if(oldVersion<4){
-				createMiscTable(db);
-			}
 			if(oldVersion<5){
+				createMiscTable(db);
 				db.execSQL("DROP TABLE `notifications_all`");
 				db.execSQL("DROP TABLE `notifications_mentions`");
 				createNotificationsTables(db, "all");
