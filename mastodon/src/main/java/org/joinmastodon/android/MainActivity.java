@@ -182,6 +182,12 @@ public class MainActivity extends FragmentStackActivity{
 		}
 	}
 
+	// MOSHIDON: we use this
+	public void restartActivity(){
+		finish();
+		startActivity(new Intent(this, MainActivity.class));
+	}
+
 	public void restartHomeFragment(){
 		if(AccountSessionManager.getInstance().getLoggedInAccounts().isEmpty()){
 			showFragmentClearingBackStack(new CustomWelcomeFragment());

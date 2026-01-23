@@ -354,7 +354,9 @@ public class AccountSwitcherSheet extends BottomSheet{
 			}
 			if(AccountSessionManager.getInstance().tryGetAccount(item.getID())!=null){
 				AccountSessionManager.getInstance().setLastActiveAccountID(item.getID());
-				((MainActivity)activity).restartHomeFragment();
+
+				// MOSHIDON: use restart the activity due to themes
+				((MainActivity)activity).restartActivity();
 			}
 		}
 
