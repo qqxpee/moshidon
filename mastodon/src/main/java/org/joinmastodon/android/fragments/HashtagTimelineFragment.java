@@ -22,6 +22,7 @@ import org.joinmastodon.android.api.session.AccountSessionManager;
 import org.joinmastodon.android.model.FilterContext;
 import org.joinmastodon.android.model.Hashtag;
 import org.joinmastodon.android.model.Status;
+import org.joinmastodon.android.model.TimelineDefinition;
 import org.joinmastodon.android.ui.text.SpacerSpan;
 import org.joinmastodon.android.ui.views.ProgressBarButton;
 import org.parceler.Parcels;
@@ -38,10 +39,9 @@ import me.grishka.appkit.utils.MergeRecyclerAdapter;
 import me.grishka.appkit.utils.SingleViewRecyclerAdapter;
 import me.grishka.appkit.utils.V;
 
-public class HashtagTimelineFragment extends StatusListFragment{
+public class HashtagTimelineFragment extends PinnableStatusListFragment {
 	private Hashtag hashtag;
 	private String hashtagName;
-	private ImageButton fab;
 	private TextView headerTitle, headerSubtitle;
 	private ProgressBarButton followButton;
 	private ProgressBar followProgress;
@@ -50,8 +50,10 @@ public class HashtagTimelineFragment extends StatusListFragment{
 	private boolean toolbarContentVisible;
 	private String maxID;
 
-	public HashtagTimelineFragment(){
-		setListLayoutId(R.layout.recycler_fragment_with_fab);
+	// MOSHIDON
+	@Override
+	protected boolean wantsComposeButton() {
+		return true;
 	}
 
 	@Override
@@ -101,13 +103,19 @@ public class HashtagTimelineFragment extends StatusListFragment{
 		fab=view.findViewById(R.id.fab);
 		fab.setOnClickListener(this::onFabClick);
 
+		// MOSHIDON:
+		if(getParentFragment() instanceof HomeTabFragment) return;
+
 		list.addOnScrollListener(new RecyclerView.OnScrollListener(){
 			@Override
 			public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy){
 				View topChild=recyclerView.getChildAt(0);
 				int firstChildPos=recyclerView.getChildAdapterPosition(topChild);
 				float newAlpha=firstChildPos>0 ? 1f : Math.min(1f, -topChild.getTop()/(float)headerTitle.getHeight());
-				toolbarTitleView.setAlpha(newAlpha);
+
+				// MOSHIDON:
+//				toolbarTitleView.setAlpha(newAlpha);
+
 				boolean newToolbarVisibility=newAlpha>0.5f;
 				if(newToolbarVisibility!=toolbarContentVisible){
 					toolbarContentVisible=newToolbarVisibility;
@@ -150,7 +158,12 @@ public class HashtagTimelineFragment extends StatusListFragment{
 		updateHeader();
 
 		MergeRecyclerAdapter mergeAdapter=new MergeRecyclerAdapter();
-		mergeAdapter.addAdapter(new SingleViewRecyclerAdapter(header));
+
+		// MOSHIDON: so the fragment can integrate nicely in the HomeTabFragment
+		if(!(getParentFragment() instanceof HomeTabFragment)){
+			mergeAdapter.addAdapter(new SingleViewRecyclerAdapter(header));
+		}
+
 		mergeAdapter.addAdapter(super.getAdapter());
 		return mergeAdapter;
 	}
@@ -164,6 +177,12 @@ public class HashtagTimelineFragment extends StatusListFragment{
 	public void onCreateOptionsMenu(Menu menu, MenuInflater inflater){
 		followMenuItem=menu.add(getString(hashtag!=null && hashtag.following ? R.string.unfollow_user : R.string.follow_user, "#"+hashtagName));
 		followMenuItem.setVisible(toolbarContentVisible);
+	}
+
+	// MOSHIDON:
+	@Override
+	protected TimelineDefinition makeTimelineDefinition(){
+		return TimelineDefinition.ofHashtag(hashtagName);
 	}
 
 	@Override
