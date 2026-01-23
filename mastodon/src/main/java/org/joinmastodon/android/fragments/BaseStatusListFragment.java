@@ -458,6 +458,10 @@ public abstract class BaseStatusListFragment<T extends DisplayItemsParent> exten
 	@Override
 	public void onViewCreated(View view, Bundle savedInstanceState){
 		super.onViewCreated(view, savedInstanceState);
+
+		// MOSHIDON: this is for the sake of the fabulous
+		fab=view.findViewById(R.id.fab);
+
 		list.addOnScrollListener(new RecyclerView.OnScrollListener(){
 			@Override
 			public void onScrolled(@NonNull RecyclerView recyclerView, int dx, int dy){
@@ -565,6 +569,15 @@ public abstract class BaseStatusListFragment<T extends DisplayItemsParent> exten
 		list.setItemAnimator(new BetterItemAnimator());
 		((UsableRecyclerView) list).setIncludeMarginsInItemHitbox(true);
 		updateToolbar();
+
+		// MOSHIDON: this is also for the fabulous
+		if (wantsComposeButton() && !getArguments().getBoolean("__disable_fab", false)) {
+			fab.setVisibility(View.VISIBLE);
+			fab.setOnClickListener(this::onFabClick);
+			fab.setOnLongClickListener(this::onFabLongClick);
+		} else if (fab != null) {
+			fab.setVisibility(View.GONE);
+		}
 	}
 
 	@Override
