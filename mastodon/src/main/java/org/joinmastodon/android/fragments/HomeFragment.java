@@ -162,7 +162,9 @@ public class HomeFragment extends AppKitFragment implements AssistContentProvide
 	@Override
 	public void onViewStateRestored(Bundle savedInstanceState){
 		super.onViewStateRestored(savedInstanceState);
-		if(savedInstanceState==null || homeTabFragment!=null)
+
+		// MOSHIDON: we must restore the homeTabFragment
+		if(savedInstanceState==null /*|| homeTabFragment!=null*/)
 			return;
 		homeTabFragment=(HomeTabFragment) getChildFragmentManager().getFragment(savedInstanceState, "homeTabFragment");
 		searchFragment=(DiscoverFragment) getChildFragmentManager().getFragment(savedInstanceState, "searchFragment");
