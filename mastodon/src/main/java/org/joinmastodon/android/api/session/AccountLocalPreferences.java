@@ -10,6 +10,7 @@ import androidx.annotation.StringRes;
 
 import com.google.gson.reflect.TypeToken;
 
+import org.joinmastodon.android.GlobalUserPreferences;
 import org.joinmastodon.android.R;
 import org.joinmastodon.android.model.ContentType;
 import org.joinmastodon.android.model.Emoji;
@@ -109,6 +110,11 @@ public class AccountLocalPreferences{
 				.putString("notificationFilters", gson.toJson(notificationFilters))
 
 				.apply();
+	}
+
+	// MOSHIDON:
+	public ColorPreference getCurrentColor(){
+		return color!=null ? color : GlobalUserPreferences.color!=null ? GlobalUserPreferences.color : ColorPreference.PURPLE;
 	}
 
 	// MOSHIDON:
