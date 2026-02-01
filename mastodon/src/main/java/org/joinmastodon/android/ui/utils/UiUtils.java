@@ -2,6 +2,10 @@ package org.joinmastodon.android.ui.utils;
 
 import static android.view.Menu.NONE;
 
+import static org.joinmastodon.android.GlobalUserPreferences.ThemePreference.DARK;
+import static org.joinmastodon.android.GlobalUserPreferences.ThemePreference.LIGHT;
+import static org.joinmastodon.android.GlobalUserPreferences.theme;
+
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
@@ -82,6 +86,7 @@ import org.joinmastodon.android.api.requests.lists.DeleteList;
 import org.joinmastodon.android.api.requests.search.GetSearchResults;
 import org.joinmastodon.android.api.requests.statuses.DeleteStatus;
 import org.joinmastodon.android.api.requests.statuses.GetStatusByID;
+import org.joinmastodon.android.api.session.AccountLocalPreferences;
 import org.joinmastodon.android.api.session.AccountSession;
 import org.joinmastodon.android.api.session.AccountSessionManager;
 import org.joinmastodon.android.events.RemoveAccountPostsEvent;
@@ -782,10 +787,28 @@ public class UiUtils{
 	}
 
 	public static void setUserPreferredTheme(Context context){
-		context.setTheme(getThemeForUserPreference(context, GlobalUserPreferences.theme));
+		// MOSHIDON: we call the other thing
+//		context.setTheme(getThemeForUserPreference(context, theme));
 
-		// MOSHIDON: fab business
+		// MOSHIDON:
+		setUserPreferredTheme(context, null);
+	}
+
+	// MOSHIDON:
+	public static void setUserPreferredTheme(Context context, @Nullable AccountSession session) {
+		context.setTheme(switch(theme) {
+			case LIGHT -> R.style.Theme_Mastodon_Light;
+			case DARK -> R.style.Theme_Mastodon_Dark;
+			default -> R.style.Theme_Mastodon_AutoLightDark;
+		});
+
+		AccountLocalPreferences prefs=session!=null ? session.getLocalPreferences() : null;
+		AccountLocalPreferences.ColorPreference color=prefs!=null ? prefs.getCurrentColor() : AccountLocalPreferences.ColorPreference.MATERIAL3;
+		ColorPalette palette = ColorPalette.palettes.get(color);
+		if (palette != null) palette.apply(context, theme);
+
 		Resources res = context.getResources();
+//		MAX_WIDTH = (int) res.getDimension(R.dimen.layout_max_width);
 		SCROLL_TO_TOP_DELTA = (int) res.getDimension(R.dimen.scroll_to_top_delta);
 	}
 
@@ -830,9 +853,9 @@ public class UiUtils{
 	}
 
 	public static boolean isDarkTheme(){
-		if(GlobalUserPreferences.theme==GlobalUserPreferences.ThemePreference.AUTO)
+		if(theme==GlobalUserPreferences.ThemePreference.AUTO)
 			return (MastodonApp.context.getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)==Configuration.UI_MODE_NIGHT_YES;
-		return GlobalUserPreferences.theme==GlobalUserPreferences.ThemePreference.DARK;
+		return theme==DARK;
 	}
 
 	public static void openURL(Context context, String accountID, String url, Object parentObject){
