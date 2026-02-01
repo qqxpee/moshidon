@@ -297,10 +297,15 @@ public class HomeFragment extends AppKitFragment implements AssistContentProvide
 	public void onSaveInstanceState(Bundle outState){
 		super.onSaveInstanceState(outState);
 		outState.putInt("selectedTab", currentTab);
-		getChildFragmentManager().putFragment(outState, "homeTabFragment", homeTabFragment);
-		getChildFragmentManager().putFragment(outState, "searchFragment", searchFragment);
-		getChildFragmentManager().putFragment(outState, "notificationsFragment", notificationsFragment);
-		getChildFragmentManager().putFragment(outState, "profileFragment", profileFragment);
+
+		// MOSHIDON: we use the isAdded because of user themes
+		if (homeTabFragment.isAdded()) getChildFragmentManager().putFragment(outState, "homeTabFragment", homeTabFragment);
+
+		if (searchFragment.isAdded()) getChildFragmentManager().putFragment(outState, "searchFragment", searchFragment);
+
+		if (notificationsFragment.isAdded()) getChildFragmentManager().putFragment(outState, "notificationsFragment", notificationsFragment);
+
+		if (profileFragment.isAdded()) getChildFragmentManager().putFragment(outState, "profileFragment", profileFragment);
 	}
 
 	@Override
