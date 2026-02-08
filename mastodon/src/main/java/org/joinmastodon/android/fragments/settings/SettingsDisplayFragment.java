@@ -38,6 +38,7 @@ public class SettingsDisplayFragment extends BaseSettingsFragment<Void>{
 
 	// MOSHIDON:
 	private ListItem<Void> colorItem;
+	private CheckableListItem<Void> trueBlackModeItem;
 	private AccountLocalPreferences lp;
 
 	@Override
@@ -63,6 +64,7 @@ public class SettingsDisplayFragment extends BaseSettingsFragment<Void>{
 
 		// MOSHIDON:
 		items.add(colorItem=new ListItem<>(getString(R.string.sk_settings_color_palette), getColorPaletteValue(), R.drawable.ic_fluent_color_24_regular, this::onColorClick));
+		items.add(trueBlackModeItem=new CheckableListItem<>(R.string.sk_settings_true_black, R.string.mo_setting_true_black_summary, CheckableListItem.Style.SWITCH, GlobalUserPreferences.trueBlackTheme, R.drawable.ic_fluent_dark_theme_24_regular, i->onTrueBlackModeClick(), true));
 
 		items.add(showCWsItem=new CheckableListItem<>(R.string.settings_show_cws, 0, CheckableListItem.Style.SWITCH, GlobalUserPreferences.showCWs, R.drawable.ic_warning_24px, this::toggleCheckableItem));
 		items.add(hideSensitiveMediaItem=new CheckableListItem<>(R.string.settings_hide_sensitive_media, 0, CheckableListItem.Style.SWITCH, GlobalUserPreferences.hideSensitiveMedia, R.drawable.ic_no_adult_content_24px, this::toggleCheckableItem));
@@ -188,6 +190,14 @@ public class SettingsDisplayFragment extends BaseSettingsFragment<Void>{
 	// MOSHIDON: may the overlords forgive my overloads
 	private void maybeApplyNewThemeRightNow(GlobalUserPreferences.ThemePreference prevTheme) {
 		maybeApplyNewThemeRightNow(prevTheme,null, null);
+	}
+
+	// MOSHIDON:
+	private void onTrueBlackModeClick(){
+		toggleCheckableItem(trueBlackModeItem);
+		boolean prev=GlobalUserPreferences.trueBlackTheme;
+		GlobalUserPreferences.trueBlackTheme=trueBlackModeItem.checked;
+		maybeApplyNewThemeRightNow(null, null, prev);
 	}
 
 	// MOSHIDON: more parameters because we need more things
