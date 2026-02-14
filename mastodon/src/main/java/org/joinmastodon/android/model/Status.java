@@ -74,7 +74,6 @@ public class Status extends BaseModel implements DisplayItemsParent, Searchable 
 	public transient Translation translation;
 
 	// MOSHIDON:
-	public Status quote; // can be boolean in calckey
 	public boolean localOnly;
 	public boolean isRemote;
 	public transient boolean sensitiveRevealed;
