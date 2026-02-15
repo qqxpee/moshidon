@@ -63,14 +63,18 @@ public class EmojiReactionsStatusDisplayItem extends StatusDisplayItem {
 	private final boolean hideEmpty, forAnnouncement, playGifs;
 	private final String accountID;
 	private static final float ALPHA_DISABLED=0.55f;
+	private Context context;
+	private Callbacks callbacks;
 
-	public EmojiReactionsStatusDisplayItem(String parentID, BaseStatusListFragment<?> parentFragment, Status status, String accountID, boolean hideEmpty, boolean forAnnouncement) {
-		super(parentID, parentFragment);
+	public EmojiReactionsStatusDisplayItem(String parentID, Callbacks callbacks, Context context, Status status, String accountID, boolean hideEmpty, boolean forAnnouncement) {
+		super(parentID, callbacks, context);
 		this.status=status;
 		this.hideEmpty=hideEmpty;
 		this.forAnnouncement=forAnnouncement;
 		this.accountID=accountID;
-		placeholder=parentFragment.getContext().getDrawable(R.drawable.image_placeholder).mutate();
+		this.context = context;
+		this.callbacks = callbacks;
+		placeholder=context.getDrawable(R.drawable.image_placeholder).mutate();
 		placeholder.setBounds(0, 0, V.sp(24), V.sp(24));
 		playGifs=GlobalUserPreferences.playGifs;
 	}
@@ -104,7 +108,11 @@ public class EmojiReactionsStatusDisplayItem extends StatusDisplayItem {
 
 	private MastodonAPIRequest<?> createRequest(String name, int count, boolean delete, Holder.EmojiReactionViewHolder vh, Runnable cb, Runnable err){
 		setActionProgressVisible(vh, true);
-		boolean ak=parentFragment.isInstanceAkkoma();
+
+		// For now I won't mess with these.
+//		boolean ak=callbacks.isInstanceAkkoma();
+		boolean ak = false;
+
 		boolean keepSpinning=delete && count == 1;
 		if(forAnnouncement){
 			MastodonAPIRequest<Object> req=delete
@@ -119,7 +127,7 @@ public class EmojiReactionsStatusDisplayItem extends StatusDisplayItem {
 				@Override
 				public void onError(ErrorResponse error){
 					setActionProgressVisible(vh, false);
-					error.showToast(parentFragment.getContext());
+					error.showToast(context);
 					if(err!=null) err.run();
 				}
 			});
@@ -136,7 +144,7 @@ public class EmojiReactionsStatusDisplayItem extends StatusDisplayItem {
 				@Override
 				public void onError(ErrorResponse error){
 					setActionProgressVisible(vh, false);
-					error.showToast(parentFragment.getContext());
+					error.showToast(context);
 					if(err!=null) err.run();
 				}
 			});
@@ -171,7 +179,7 @@ public class EmojiReactionsStatusDisplayItem extends StatusDisplayItem {
 		public void onBind(EmojiReactionsStatusDisplayItem item) {
 			if(emojiKeyboard != null) root.removeView(emojiKeyboard.getView());
 			addButton.setSelected(false);
-			AccountSession session=item.parentFragment.getSession();
+//			AccountSession session=callbacks.getSession();
 			item.status.reactions.forEach(r->r.request=r.getUrl(item.playGifs)!=null
 					? new UrlImageLoaderRequest(r.getUrl(item.playGifs), 0, V.sp(24))
 					: null);
@@ -397,21 +405,21 @@ public class EmojiReactionsStatusDisplayItem extends StatusDisplayItem {
 						}
 						E.post(new EmojiReactionsUpdatedEvent(parent.status.id, parent.status.reactions, parent.status.reactions.isEmpty(), adapter.parentHolder));
 //						adapter.parentHolder.imgLoader.updateImages();
-					}, null).exec(parent.parentFragment.getAccountID());
+					}, null).exec(parent.accountID);
 				});
 
-				if (parent.parentFragment.isInstanceAkkoma()) {
+				if (/* parent.callbacks.isInstanceAkkoma() */ 1 != 1) {
 					// glitch-soc doesn't have this, afaik
 					btn.setOnLongClickListener(e->{
 						EmojiReaction emojiReaction=parent.status.reactions.get(getAbsoluteAdapterPosition());
 						Bundle args=new Bundle();
-						args.putString("account", parent.parentFragment.getAccountID());
+						args.putString("account", parent.accountID);
 						args.putString("statusID", parent.status.id);
 						int atSymbolIndex = emojiReaction.name.indexOf("@");
 						args.putString("emoji", atSymbolIndex != -1 ? emojiReaction.name.substring(0, atSymbolIndex) : emojiReaction.name);
 						args.putString("url", emojiReaction.getUrl(parent.playGifs));
 						args.putInt("count", emojiReaction.count);
-						Nav.go(parent.parentFragment.getActivity(), StatusEmojiReactionsListFragment.class, args);
+						Nav.go((Activity) parent.context, StatusEmojiReactionsListFragment.class, args);
 						return true;
 					});
 				}
