@@ -53,25 +53,25 @@ public abstract class BaseNotificationsListFragment extends BaseStatusListFragme
 				boolean replyToSelf=AccountSessionManager.get(accountID).self.id.equals(n.status.inReplyToAccountId);
 				int icon=replyToSelf ? R.drawable.ic_reply_wght700_20px : R.drawable.ic_alternate_email_wght700fill1_20px;
 				if(n.status.visibility==StatusPrivacy.DIRECT){
-					// FIXME: use our custom implementation
-					titleItem=new ReblogOrReplyLineStatusDisplayItem(n.getID(), this, getActivity(), getString(replyToSelf ? R.string.private_reply : R.string.private_mention), null, icon, accountID);
+					// MOSHIDON: we use our custom reply or reblog line
+					titleItem=new ReblogOrReplyLineCustomStatusDisplayItem(n.getID(), this, getActivity(), getString(replyToSelf ? R.string.private_reply : R.string.private_mention), null, icon);
 				}else{
-					// FIXME: use our custom implementation
-					titleItem=new ReblogOrReplyLineStatusDisplayItem(n.getID(), this, getActivity(), getString(replyToSelf ? R.string.post_header_reply : R.string.post_header_mention), null, icon, accountID);
+					// MOSHIDON: we use our custom reply or reblog line
+					titleItem=new ReblogOrReplyLineCustomStatusDisplayItem(n.getID(), this, getActivity(), getString(replyToSelf ? R.string.post_header_reply : R.string.post_header_mention), null, icon);
 				}
 			}else{
 				titleItem=null;
 			}
 		}else if(n.notification.type==NotificationType.STATUS){
 			if(n.status!=null)
-				// FIXME: use our custom implementation
-				titleItem=new ReblogOrReplyLineStatusDisplayItem(n.getID(), this, getActivity(), getString(R.string.user_just_posted), n.status.account, R.drawable.ic_notifications_wght700fill1_20px, accountID);
+				// MOSHIDON: we use our custom reply or reblog line
+				titleItem=new ReblogOrReplyLineCustomStatusDisplayItem(n.getID(), this, getActivity(), getString(R.string.user_just_posted, n.status.account.displayName), n.status.account.emojis, R.drawable.ic_notifications_wght700fill1_20px);
 			else
 				titleItem=null;
 		}else if(n.notification.type==NotificationType.QUOTE){
 			if(n.status!=null)
-				// FIXME: use our custom implementation
-				titleItem=new ReblogOrReplyLineStatusDisplayItem(n.getID(), this, getActivity(), getString(R.string.user_quoted_post), n.status.account, R.drawable.ic_format_quote_wght700fill1_20px, accountID);
+				// MOSHIDON: we use our custom reply or reblog line
+				titleItem=new ReblogOrReplyLineCustomStatusDisplayItem(n.getID(), this, getActivity(), getString(R.string.user_quoted_post, n.status.account.displayName), n.status.account.emojis, R.drawable.ic_notifications_wght700fill1_20px);
 			else
 				titleItem=null;
 		}else{
