@@ -49,16 +49,16 @@ public class ReblogOrReplyLineCustomStatusDisplayItem extends StatusDisplayItem{
 	ReblogOrReplyLineCustomStatusDisplayItem extra;
 	CharSequence fullText;
 
-	public ReblogOrReplyLineCustomStatusDisplayItem(String parentID, BaseStatusListFragment parentFragment, CharSequence text, List<Emoji> emojis, @DrawableRes int icon) {
-		this(parentID, parentFragment, text, emojis, icon, null, null, text, null);
+	public ReblogOrReplyLineCustomStatusDisplayItem(String parentID, Callbacks callbacks, Context context, CharSequence text, List<Emoji> emojis, @DrawableRes int icon) {
+		this(parentID, callbacks, context, text, emojis, icon, null, null, text, null);
 	}
 
-	public ReblogOrReplyLineCustomStatusDisplayItem(String parentID, BaseStatusListFragment parentFragment, CharSequence text, List<Emoji> emojis, @DrawableRes int icon, StatusPrivacy visibility, @Nullable View.OnClickListener handleClick) {
-		this(parentID, parentFragment, text, emojis, icon, visibility, handleClick, text, null);
+	public ReblogOrReplyLineCustomStatusDisplayItem(String parentID, Callbacks callbacks, Context context, CharSequence text, List<Emoji> emojis, @DrawableRes int icon, StatusPrivacy visibility, @Nullable View.OnClickListener handleClick) {
+		this(parentID, callbacks, context, text, emojis, icon, visibility, handleClick, text, null);
 	}
 
-	public ReblogOrReplyLineCustomStatusDisplayItem(String parentID, BaseStatusListFragment parentFragment, CharSequence text, List<Emoji> emojis, @DrawableRes int icon, StatusPrivacy visibility, @Nullable View.OnClickListener handleClick, CharSequence fullText, Account account) {
-		super(parentID, parentFragment);
+		public ReblogOrReplyLineCustomStatusDisplayItem(String parentID, Callbacks callbacks, Context context, CharSequence text, List<Emoji> emojis, @DrawableRes int icon, StatusPrivacy visibility, @Nullable View.OnClickListener handleClick, CharSequence fullText, Account account) {
+		super(parentID, callbacks, context);
 		SpannableStringBuilder ssb=new SpannableStringBuilder(text);
 		if(GlobalUserPreferences.customEmojiInNames && emojis != null)
 			HtmlParser.parseCustomEmoji(ssb, emojis);
