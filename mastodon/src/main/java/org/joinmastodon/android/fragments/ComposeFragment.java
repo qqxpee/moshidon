@@ -1192,6 +1192,8 @@ public class ComposeFragment extends MastodonToolbarFragment implements ComposeE
 				};
 				case PRIVATE -> R.string.visibility_followers_only;
 				case DIRECT -> R.string.visibility_private;
+				// MOSHIDON:
+				case LOCAL -> R.string.sk_local_only;
 			});
 		}else{
 			visibilityText.setText(switch(statusVisibility){
