@@ -125,8 +125,8 @@ public abstract class StatusDisplayItem{
 	}
 
 	// MOSHIDON: may the overload not make me sad later
-	public static ArrayList<StatusDisplayItem> buildItems(BaseStatusListFragment<?> fragment, Status status, String accountID, DisplayItemsParent parentObject, Map<String, Account> knownAccounts, int flags){
-		return buildItems(fragment, status, accountID, parentObject, knownAccounts, null, flags);
+	public static ArrayList<StatusDisplayItem> buildItems(Context context, Status status, String accountID, DisplayItemsParent parentObject, Map<String, Account> knownAccounts, int flags){
+		return buildItems(null, context, status, accountID, parentObject, knownAccounts, flags);
 	}
 
 	public static ArrayList<StatusDisplayItem> buildItems(Callbacks callbacks, Context context, Status status, String accountID, DisplayItemsParent parentObject, Map<String, Account> knownAccounts, int flags){
