@@ -257,11 +257,11 @@ public class FooterStatusDisplayItem extends StatusDisplayItem{
 
 		// MOSHIDON:
 		private void openComposeView(Status status, String accountID) {
-			item.parentFragment.maybeShowPreReplySheet(status, () ->{
+			item.callbacks.maybeShowPreReplySheet(status, () ->{
 				Bundle args=new Bundle();
 				args.putString("account", accountID);
 				args.putParcelable("replyTo", Parcels.wrap(status));
-				Nav.go(item.parentFragment.getActivity(), ComposeFragment.class, args);
+				Nav.go((Activity) item.context, ComposeFragment.class, args);
 			});
 		}
 
@@ -342,7 +342,7 @@ public class FooterStatusDisplayItem extends StatusDisplayItem{
 					args.putString("prefilledText", prefilledText.toString());
 					args.putInt("selectionStart", 0);
 				}
-				Nav.go(item.parentFragment.getActivity(), ComposeFragment.class, args);
+				Nav.go((Activity) item.context, ComposeFragment.class, args);
 			});
 
 			dialog.show();
