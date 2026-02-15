@@ -1,5 +1,8 @@
 package org.joinmastodon.android.model;
 
+import static org.joinmastodon.android.api.MastodonAPIController.gson;
+import static org.joinmastodon.android.api.MastodonAPIController.gsonWithoutDeserializer;
+
 import android.text.TextUtils;
 
 import org.joinmastodon.android.api.ObjectValidationException;
@@ -8,6 +11,7 @@ import org.joinmastodon.android.events.StatusCountersUpdatedEvent;
 import org.joinmastodon.android.ui.text.HtmlParser;
 import org.parceler.Parcel;
 
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -16,6 +20,12 @@ import java.util.Locale;
 import java.util.Objects;
 
 import androidx.annotation.NonNull;
+
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 
 @Parcel
 public class Status extends BaseModel implements DisplayItemsParent, Searchable {
@@ -230,6 +240,35 @@ public class Status extends BaseModel implements DisplayItemsParent, Searchable 
 		FILTER
 	}
 
+	// MOSHIDON: we use this for akkoma quotes
+	public static class StatusDeserializer implements JsonDeserializer<Status>{
+		@Override
+		public Status deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException{
+			JsonObject obj=json.getAsJsonObject();
+//			// FIXME: find way to make this work with akkoma
+//			Status quote=null;
+//			if (obj.has("quote") && obj.get("quote").isJsonObject()) {
+//				quote=gson.fromJson(obj.get("quote"), Status.class);
+//
+//				if (quote.account == null) {
+//					quote=null;
+//				}
+//			}
+//			obj.remove("quote");
+//
+//			Status reblog=null;
+//			if (obj.has("reblog"))
+//				reblog=gson.fromJson(obj.get("reblog"), Status.class);
+//			obj.remove("reblog");
+//
+			Status status=gsonWithoutDeserializer.fromJson(json, Status.class);
+			// FIXME: I am not sure this works
+//			status.quote=quote;
+//			status.reblog=reblog;
+
+			return status;
+		}
+	}
 	// MOSHIDON:
 	public static Status ofFake(String id, String text, Instant createdAt) {
 		Status s=new Status();
