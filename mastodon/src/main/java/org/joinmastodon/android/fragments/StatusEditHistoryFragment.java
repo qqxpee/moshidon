@@ -34,11 +34,17 @@ import name.fraser.neil.plaintext.diff_match_patch;
 public class StatusEditHistoryFragment extends StatusListFragment{
 	private String id;
 
+	// MOSHIDON: for the weburi stuff
+	private String url;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState){
 		super.onCreate(savedInstanceState);
 		id=getArguments().getString("id");
+
+		// MOSHIDON: url!!
+		url=getArguments().getString("url");
+
 		loadData();
 	}
 
