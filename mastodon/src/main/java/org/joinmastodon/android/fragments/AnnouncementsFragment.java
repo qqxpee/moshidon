@@ -62,7 +62,7 @@ public class AnnouncementsFragment extends BaseStatusListFragment<Announcement> 
 		// TODO: add this later
 //		items.add(HeaderStatusDisplayItem.fromAnnouncement(a, fakeStatus, instanceUser, this, accountID, this::onMarkAsRead));
 //		items.add(textItem);
-		if(!isInstanceAkkoma()) items.add(new EmojiReactionsStatusDisplayItem(a.id, this, fakeStatus, accountID, false, true));
+		if(!isInstanceAkkoma()) items.add(new EmojiReactionsStatusDisplayItem(a.id, this, getContext(), fakeStatus, accountID, false, true));
 		return items;
 	}
 
@@ -97,6 +97,11 @@ public class AnnouncementsFragment extends BaseStatusListFragment<Announcement> 
 					}
 				})
 				.exec(accountID);
+	}
+
+	// FIXME: properly implement this
+	protected Status asStatus(Announcement announcement) {
+		return new Status();
 	}
 
 	@Override
