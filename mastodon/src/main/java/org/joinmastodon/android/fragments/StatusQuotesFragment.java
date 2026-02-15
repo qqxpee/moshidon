@@ -1,9 +1,11 @@
 package org.joinmastodon.android.fragments;
 
+import android.net.Uri;
 import android.os.Bundle;
 
 import org.joinmastodon.android.R;
 import org.joinmastodon.android.api.requests.statuses.GetStatusQuotes;
+import org.joinmastodon.android.model.FilterContext;
 import org.joinmastodon.android.model.HeaderPaginationList;
 import org.joinmastodon.android.model.Status;
 import org.parceler.Parcels;
@@ -33,5 +35,16 @@ public class StatusQuotesFragment extends StatusListFragment{
 					}
 				})
 				.exec(accountID);
+	}
+
+	@Override
+	protected FilterContext getFilterContext(){
+		// FIXME: dunno which filter context to use
+		return null;
+	}
+
+	@Override
+	public Uri getWebUri(Uri.Builder base){
+		return null;
 	}
 }
