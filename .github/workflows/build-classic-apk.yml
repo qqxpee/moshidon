@@ -1,4 +1,4 @@
-name: Build Custom Moshidon (Release)
+name: Build and Release MoshidonQX
 
 on:
   workflow_dispatch:
@@ -6,6 +6,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -28,17 +30,19 @@ jobs:
           fileName: "release.jks"
           encodedString: ${{ secrets.KEYSTORE_FILE }}
 
-      - name: Feature & Brand Patch
+      - name: MoshidonQX Brand & Feature Patch
         run: |
           # 1. 解锁 12 张图片限制
           TARGET_FILE="mastodon/src/main/java/org/joinmastodon/android/ui/viewcontrollers/ComposeMediaViewController.java"
           sed -i 's/MAX_ATTACHMENTS = 4/MAX_ATTACHMENTS = 12/g' $TARGET_FILE
           sed -i 's/MAX_ATTACHMENTS=4/MAX_ATTACHMENTS=12/g' $TARGET_FILE
           
-          # 2. 修改应用显示名称
-          STRINGS_FILE="mastodon/src/main/res/values/strings.xml"
-          sed -i 's/>Moshidon</>Moshidon-Custom</g' $STRINGS_FILE
+          # 2. 全量更名逻辑：将所有 strings.xml 里的 app_name 改为 MoshidonQX
+          find . -name "strings.xml" -exec sed -i 's/name="app_name">[^<]*/name="app_name">MoshidonQX/g' {} +
           
+          # 3. 修改 AndroidManifest.xml 里的标签
+          find . -name "AndroidManifest.xml" -exec sed -i 's/android:label="Moshidon"/android:label="MoshidonQX"/g' {} +
+
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
       - name: Build Release APK
@@ -48,32 +52,31 @@ jobs:
 
       - name: Locate and Sign APK
         run: |
-          echo "--- Scanning for APK files ---"
-          find . -name "*.apk"
-          
-          # 修正后的搜索逻辑：专门抓取 release 目录下的 apk，但只排除我们最终生成的那个名字
-          # 这样 unsigned 就能顺利被捕获了
+          # 搜索生成的 Release APK
           UNSIGNED_APK=$(find . -path "*/build/outputs/apk/*" -name "*.apk" | grep -i "release" | grep -v "\-Signed.apk" | head -n 1)
+          if [ -z "$UNSIGNED_APK" ]; then echo "Error: No APK found!"; exit 1; fi
           
-          if [ -z "$UNSIGNED_APK" ]; then
-            echo "Error: No Release APK found!"
-            exit 1
-          fi
+          SIGNED_APK="MoshidonQX-Signed.apk"
           
-          echo "Caught file: $UNSIGNED_APK"
-          SIGNED_APK="Moshidon-Custom-Signed.apk"
-          
-          # 签名操作
+          # 使用你存好的脱敏密钥进行签名
           $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign \
             --ks ${{ steps.android_keystore.outputs.filePath }} \
             --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
             --ks-key-alias custom-alias \
             --out $SIGNED_APK "$UNSIGNED_APK"
-          
-          echo "Success: APK signed and ready."
+          echo "Success: MoshidonQX signed."
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: Moshidon-Custom-Release
-          path: "Moshidon-Custom-Signed.apk"
+          tag_name: v1.0.${{ github.run_number }}
+          name: MoshidonQX Release v1.0.${{ github.run_number }}
+          body: |
+            ## MoshidonQX (Classic Edition)
+            - 解锁 12 张图片上传限制
+            - 品牌更名为 MoshidonQX
+            - 自动签名正式版
+          files: |
+            MoshidonQX-Signed.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
