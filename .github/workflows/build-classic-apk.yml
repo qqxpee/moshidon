@@ -35,7 +35,7 @@ jobs:
           sed -i 's/MAX_ATTACHMENTS = 4/MAX_ATTACHMENTS = 12/g' $TARGET_FILE
           sed -i 's/MAX_ATTACHMENTS=4/MAX_ATTACHMENTS=12/g' $TARGET_FILE
           
-          # 2. 修改应用显示名称 (使用通用后缀)
+          # 2. 修改应用显示名称
           STRINGS_FILE="mastodon/src/main/res/values/strings.xml"
           sed -i 's/>Moshidon</>Moshidon-Custom</g' $STRINGS_FILE
           
@@ -51,21 +51,23 @@ jobs:
           echo "--- Scanning for APK files ---"
           find . -name "*.apk"
           
-          # 自动捕获 Release APK
-          UNSIGNED_APK=$(find . -path "*/build/outputs/apk/*" -name "*.apk" | grep -i "release" | grep -v "signed" | head -n 1)
+          # 修正后的搜索逻辑：专门抓取 release 目录下的 apk，但只排除我们最终生成的那个名字
+          # 这样 unsigned 就能顺利被捕获了
+          UNSIGNED_APK=$(find . -path "*/build/outputs/apk/*" -name "*.apk" | grep -i "release" | grep -v "\-Signed.apk" | head -n 1)
           
           if [ -z "$UNSIGNED_APK" ]; then
             echo "Error: No Release APK found!"
             exit 1
           fi
           
+          echo "Caught file: $UNSIGNED_APK"
           SIGNED_APK="Moshidon-Custom-Signed.apk"
           
-          # 使用 Secrets 中的变量进行签名，证书别名建议您在生成时也使用通用名称
+          # 签名操作
           $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign \
             --ks ${{ steps.android_keystore.outputs.filePath }} \
             --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
-            --ks-key-alias qx-alias \
+            --ks-key-alias custom-alias \
             --out $SIGNED_APK "$UNSIGNED_APK"
           
           echo "Success: APK signed and ready."
