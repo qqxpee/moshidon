@@ -1,0 +1,49 @@
+name: Build Moshidon Classic (12 Images Unlock)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Prepare Environment
+        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+
+      - name: Unlock 12 Attachments (Classic Controller)
+        run: |
+          # 邱工，经典版的变量在这里：
+          TARGET_FILE="mastodon/src/main/java/org/joinmastodon/android/ui/viewcontrollers/ComposeMediaViewController.java"
+          
+          # 经典版的定义可能是 private static final int MAX_ATTACHMENTS=4;
+          # 我们用 sed 进行精确替换
+          sed -i 's/MAX_ATTACHMENTS=4/MAX_ATTACHMENTS=12/g' $TARGET_FILE
+          # 备用匹配（防止代码里有空格）
+          sed -i 's/MAX_ATTACHMENTS = 4/MAX_ATTACHMENTS = 12/g' $TARGET_FILE
+          
+          echo "Success: Media limit updated in ComposeMediaViewController."
+
+      - name: Build Debug APK
+        run: |
+          chmod +x gradlew
+          ./gradlew :mastodon:assembleDebug --no-daemon
+
+      - name: Upload Classic APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Moshidon-Classic-QX
+          path: "**/build/outputs/apk/**/*.apk"
