@@ -26,7 +26,7 @@ jobs:
         id: android_keystore
         with:
           fileName: "release.jks"
-          encodedString: ${{ secrets.KEYSTORE_FILE }} # 读取您存好的 Base64
+          encodedString: ${{ secrets.KEYSTORE_FILE }} 
 
       - name: MoshidonQX Brand & Feature Patch
         run: |
@@ -35,7 +35,7 @@ jobs:
           sed -i 's/MAX_ATTACHMENTS = 4/MAX_ATTACHMENTS = 12/g' $TARGET_FILE
           sed -i 's/MAX_ATTACHMENTS=4/MAX_ATTACHMENTS=12/g' $TARGET_FILE
           
-          # 2. 修改桌面应用名称为 MoshidonQX，告别“掩耳盗铃”
+          # 2. 修改桌面应用名称为 MoshidonQX
           STRINGS_FILE="mastodon/src/main/res/values/strings.xml"
           sed -i 's/>Moshidon</>MoshidonQX</g' $STRINGS_FILE
           
@@ -55,7 +55,6 @@ jobs:
           SIGNED_APK="MoshidonQX-Final-Signed.apk"
           
           # 使用 apksigner 注入您的私有签名
-          # 这里使用的是您刚刚在 Secrets 里设置的密码 qx123456
           $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign --ks ${{ steps.android_keystore.outputs.filePath }} \
             --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} --out $SIGNED_APK $UNSIGNED_APK
           
