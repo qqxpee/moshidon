@@ -1,4 +1,4 @@
-name: Build and Release MoshidonQX
+name: Build and Release MoshidonQX (Secret Driven)
 
 on:
   workflow_dispatch:
@@ -32,17 +32,23 @@ jobs:
 
       - name: MoshidonQX Brand & Feature Patch
         run: |
-          # 1. 解锁 12 张图片限制
-          TARGET_FILE="mastodon/src/main/java/org/joinmastodon/android/ui/viewcontrollers/ComposeMediaViewController.java"
-          sed -i 's/MAX_ATTACHMENTS = 4/MAX_ATTACHMENTS = 12/g' $TARGET_FILE
-          sed -i 's/MAX_ATTACHMENTS=4/MAX_ATTACHMENTS=12/g' $TARGET_FILE
+          # 1. 核心破解：12 张图片限制
+          TARGET_JAVA="mastodon/src/main/java/org/joinmastodon/android/ui/viewcontrollers/ComposeMediaViewController.java"
+          sed -i 's/MAX_ATTACHMENTS = 4/MAX_ATTACHMENTS = 12/g' $TARGET_JAVA
+          sed -i 's/MAX_ATTACHMENTS=4/MAX_ATTACHMENTS=12/g' $TARGET_JAVA
           
-          # 2. 全量更名逻辑：将所有 strings.xml 里的 app_name 改为 MoshidonQX
-          find . -name "strings.xml" -exec sed -i 's/name="app_name">[^<]*/name="app_name">MoshidonQX/g' {} +
+          # 2. 从 Secrets 读取应用名称并精准替换
+          # 变量名变为 ${{ secrets.CUSTOM_APP_NAME }}
+          TARGET_XML="mastodon/src/main/res/values/strings_mo.xml"
           
-          # 3. 修改 AndroidManifest.xml 里的标签
-          find . -name "AndroidManifest.xml" -exec sed -i 's/android:label="Moshidon"/android:label="MoshidonQX"/g' {} +
-
+          sed -i "s/>Moshidon</>${{ secrets.CUSTOM_APP_NAME }}</g" $TARGET_XML
+          sed -i "s/>Moshidon Debug</>${{ secrets.CUSTOM_APP_NAME }}</g" $TARGET_XML
+          sed -i "s/>Moshidon Nightly</>${{ secrets.CUSTOM_APP_NAME }}</g" $TARGET_XML
+          
+          # 3. 清单文件硬编码同步
+          find . -name "AndroidManifest.xml" -exec sed -i "s/android:label=\"@string\/mo_app_name\"/android:label=\"${{ secrets.CUSTOM_APP_NAME }}\"/g" {} +
+          
+          echo "Patch applied using secret: ${{ secrets.CUSTOM_APP_NAME }}"
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
       - name: Build Release APK
@@ -52,31 +58,29 @@ jobs:
 
       - name: Locate and Sign APK
         run: |
-          # 搜索生成的 Release APK
           UNSIGNED_APK=$(find . -path "*/build/outputs/apk/*" -name "*.apk" | grep -i "release" | grep -v "\-Signed.apk" | head -n 1)
           if [ -z "$UNSIGNED_APK" ]; then echo "Error: No APK found!"; exit 1; fi
           
-          SIGNED_APK="MoshidonQX-Signed.apk"
+          # 签名后的文件名也从 Secret 读取
+          SIGNED_APK="${{ secrets.CUSTOM_APP_NAME }}-Signed.apk"
           
-          # 使用你存好的脱敏密钥进行签名
           $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign \
             --ks ${{ steps.android_keystore.outputs.filePath }} \
             --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
             --ks-key-alias custom-alias \
-            --out $SIGNED_APK "$UNSIGNED_APK"
-          echo "Success: MoshidonQX signed."
+            --out "$SIGNED_APK" "$UNSIGNED_APK"
+          echo "Success: $SIGNED_APK generated."
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: MoshidonQX Release v1.0.${{ github.run_number }}
+          name: "${{ secrets.CUSTOM_APP_NAME }} Release v1.0.${{ github.run_number }}"
           body: |
-            ## MoshidonQX (Classic Edition)
-            - 解锁 12 张图片上传限制
-            - 品牌更名为 MoshidonQX
-            - 自动签名正式版
+            ## ${{ secrets.CUSTOM_APP_NAME }} 自动构建
+            - **密钥配置**：应用名称完全由 Repository Secret 控制
+            - **破解项**：12 张媒体图片限制已解除
           files: |
-            MoshidonQX-Signed.apk
+            ${{ secrets.CUSTOM_APP_NAME }}-Signed.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
