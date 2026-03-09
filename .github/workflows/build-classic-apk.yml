@@ -1,4 +1,4 @@
-name: Build and Release MoshidonQX (Secret Driven)
+name: Build and Release MoshidonQX (Hard Reset)
 
 on:
   workflow_dispatch:
@@ -30,25 +30,37 @@ jobs:
           fileName: "release.jks"
           encodedString: ${{ secrets.KEYSTORE_FILE }}
 
-      - name: MoshidonQX Brand & Feature Patch
+      - name: MoshidonQX Hard Patch & Logging
         run: |
-          # 1. 核心破解：12 张图片限制
+          # 定义文件路径
           TARGET_JAVA="mastodon/src/main/java/org/joinmastodon/android/ui/viewcontrollers/ComposeMediaViewController.java"
+          TARGET_XML="mastodon/src/main/res/values/strings_mo.xml"
+          TARGET_MANIFEST="mastodon/src/main/AndroidManifest.xml"
+          TARGET_GRADLE="mastodon/build.gradle"
+          APP_NAME="${{ secrets.CUSTOM_APP_NAME }}"
+
+          echo "=== 1. 开始破解 12 张图片限制 ==="
           sed -i 's/MAX_ATTACHMENTS = 4/MAX_ATTACHMENTS = 12/g' $TARGET_JAVA
           sed -i 's/MAX_ATTACHMENTS=4/MAX_ATTACHMENTS=12/g' $TARGET_JAVA
-          
-          # 2. 从 Secrets 读取应用名称并精准替换
-          # 变量名变为 ${{ secrets.CUSTOM_APP_NAME }}
-          TARGET_XML="mastodon/src/main/res/values/strings_mo.xml"
-          
-          sed -i "s/>Moshidon</>${{ secrets.CUSTOM_APP_NAME }}</g" $TARGET_XML
-          sed -i "s/>Moshidon Debug</>${{ secrets.CUSTOM_APP_NAME }}</g" $TARGET_XML
-          sed -i "s/>Moshidon Nightly</>${{ secrets.CUSTOM_APP_NAME }}</g" $TARGET_XML
-          
-          # 3. 清单文件硬编码同步
-          find . -name "AndroidManifest.xml" -exec sed -i "s/android:label=\"@string\/mo_app_name\"/android:label=\"${{ secrets.CUSTOM_APP_NAME }}\"/g" {} +
-          
-          echo "Patch applied using secret: ${{ secrets.CUSTOM_APP_NAME }}"
+          grep "MAX_ATTACHMENTS" $TARGET_JAVA
+
+          echo -e "\n=== 2. 开始修改应用包名 (applicationId) ==="
+          # 将原包名修改为以 .qx 结尾，彻底绕过系统缓存
+          # 原包名: org.joinmastodon.android.moshinda -> 新包名: org.joinmastodon.android.qx
+          sed -i 's/applicationId "org.joinmastodon.android.moshinda"/applicationId "org.joinmastodon.android.qx"/g' $TARGET_GRADLE
+          grep "applicationId" $TARGET_GRADLE
+
+          echo -e "\n=== 3. 开始精准更名 strings_mo.xml ==="
+          # 支持带属性的标签替换
+          sed -i -E "s/(name=\"mo_app_name(_debug|_nightly)?\"[^>]*>)[^<]*/\1$APP_NAME/g" $TARGET_XML
+          grep "mo_app_name" $TARGET_XML
+
+          echo -e "\n=== 4. 强制注入清单文件 (AndroidManifest) ==="
+          # 直接把引用改为硬编码，不给系统回退的机会
+          sed -i "s/android:label=\"@string\/mo_app_name\"/android:label=\"$APP_NAME\"/g" $TARGET_MANIFEST
+          grep "android:label=" $TARGET_MANIFEST
+
+          echo -e "\n=== Patch 阶段完成 ==="
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
       - name: Build Release APK
@@ -61,7 +73,6 @@ jobs:
           UNSIGNED_APK=$(find . -path "*/build/outputs/apk/*" -name "*.apk" | grep -i "release" | grep -v "\-Signed.apk" | head -n 1)
           if [ -z "$UNSIGNED_APK" ]; then echo "Error: No APK found!"; exit 1; fi
           
-          # 签名后的文件名也从 Secret 读取
           SIGNED_APK="${{ secrets.CUSTOM_APP_NAME }}-Signed.apk"
           
           $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign \
@@ -69,17 +80,18 @@ jobs:
             --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
             --ks-key-alias custom-alias \
             --out "$SIGNED_APK" "$UNSIGNED_APK"
-          echo "Success: $SIGNED_APK generated."
+          echo "Success: $SIGNED_APK is signed."
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: "${{ secrets.CUSTOM_APP_NAME }} Release v1.0.${{ github.run_number }}"
+          name: "${{ secrets.CUSTOM_APP_NAME }} Release"
           body: |
-            ## ${{ secrets.CUSTOM_APP_NAME }} 自动构建
-            - **密钥配置**：应用名称完全由 Repository Secret 控制
-            - **破解项**：12 张媒体图片限制已解除
+            ## MoshidonQX 终极修复版
+            - **包名变更**：由 moshinda 改为 qx（绕过 ColorOS 缓存）
+            - **应用更名**：强制硬编码为 ${{ secrets.CUSTOM_APP_NAME }}
+            - **多图解锁**：支持 12 张图
           files: |
             ${{ secrets.CUSTOM_APP_NAME }}-Signed.apk
         env:
