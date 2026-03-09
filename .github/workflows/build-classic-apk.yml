@@ -1,7 +1,7 @@
-name: Build Moshidon Classic (12 Images Unlock)
+name: Build MoshidonQX (Professional Release)
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # 保持手动触发，避免浪费 Actions 额度
 
 jobs:
   build:
@@ -10,7 +10,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          ref: master
+          ref: master # 锁定经典版分支
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -21,29 +21,48 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Prepare Environment
-        run: echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+      - name: Decode Keystore
+        uses: timheuer/base64-to-file@v1
+        id: android_keystore
+        with:
+          fileName: "release.jks"
+          encodedString: ${{ secrets.KEYSTORE_FILE }} # 读取您存好的 Base64
 
-      - name: Unlock 12 Attachments (Classic Controller)
+      - name: MoshidonQX Brand & Feature Patch
         run: |
-          # 邱工，经典版的变量在这里：
+          # 1. 破解 12 张图片限制
           TARGET_FILE="mastodon/src/main/java/org/joinmastodon/android/ui/viewcontrollers/ComposeMediaViewController.java"
-          
-          # 经典版的定义可能是 private static final int MAX_ATTACHMENTS=4;
-          # 我们用 sed 进行精确替换
-          sed -i 's/MAX_ATTACHMENTS=4/MAX_ATTACHMENTS=12/g' $TARGET_FILE
-          # 备用匹配（防止代码里有空格）
           sed -i 's/MAX_ATTACHMENTS = 4/MAX_ATTACHMENTS = 12/g' $TARGET_FILE
+          sed -i 's/MAX_ATTACHMENTS=4/MAX_ATTACHMENTS=12/g' $TARGET_FILE
           
-          echo "Success: Media limit updated in ComposeMediaViewController."
+          # 2. 修改桌面应用名称为 MoshidonQX，告别“掩耳盗铃”
+          STRINGS_FILE="mastodon/src/main/res/values/strings.xml"
+          sed -i 's/>Moshidon</>MoshidonQX</g' $STRINGS_FILE
+          
+          # 3. 初始化环境
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
-      - name: Build Debug APK
+      - name: Build Release APK
         run: |
           chmod +x gradlew
-          ./gradlew :mastodon:assembleDebug --no-daemon
+          # 编译 Release 变体，开启 R8 优化
+          ./gradlew :mastodon:assembleRelease --no-daemon
 
-      - name: Upload Classic APK
+      - name: Sign APK (MoshidonQX Identity)
+        run: |
+          # 找到生成的未签名 APK
+          UNSIGNED_APK=$(find mastodon/build/outputs/apk/release -name "*-unsigned.apk" | head -n 1)
+          SIGNED_APK="MoshidonQX-Final-Signed.apk"
+          
+          # 使用 apksigner 注入您的私有签名
+          # 这里使用的是您刚刚在 Secrets 里设置的密码 qx123456
+          $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign --ks ${{ steps.android_keystore.outputs.filePath }} \
+            --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} --out $SIGNED_APK $UNSIGNED_APK
+          
+          echo "Success: MoshidonQX is now officially signed and ready."
+
+      - name: Upload MoshidonQX APK
         uses: actions/upload-artifact@v4
         with:
-          name: Moshidon-Classic-QX
-          path: "**/build/outputs/apk/**/*.apk"
+          name: MoshidonQX-Release-Package
+          path: "MoshidonQX-Final-Signed.apk"
