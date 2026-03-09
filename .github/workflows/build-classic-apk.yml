@@ -1,10 +1,10 @@
-name: Build and Release MoshidonQX (Hard Reset)
+name: Build and Release MoshidonQX (Chinese Support)
 
 on:
   workflow_dispatch:
 
 env:
-  # 这里的包名我们也参数化，方便我以后帮你排查
+  # 这里的包名必须保持英文，不要动！
   NEW_APP_ID: "org.joinmastodon.android.qx"
 
 jobs:
@@ -36,30 +36,31 @@ jobs:
 
       - name: MoshidonQX Hard Patch & Debug Logging
         run: |
-          # 1. 破解 12 张图片限制
           TARGET_JAVA="mastodon/src/main/java/org/joinmastodon/android/ui/viewcontrollers/ComposeMediaViewController.java"
+          TARGET_GRADLE="mastodon/build.gradle"
+          TARGET_XML="mastodon/src/main/res/values/strings_mo.xml"
+          TARGET_MANIFEST="mastodon/src/main/AndroidManifest.xml"
+          
+          # 1. 动态生成版本号与读取中文应用名
+          NEW_VERSION="2.3.0-QX.${{ github.run_number }}"
+          APP_NAME="${{ secrets.CUSTOM_APP_NAME }}"
+
+          echo "[SYSTEM_CHECK] 1. 破解图片限制"
           sed -i 's/MAX_ATTACHMENTS = 4/MAX_ATTACHMENTS = 12/g' $TARGET_JAVA
           sed -i 's/MAX_ATTACHMENTS=4/MAX_ATTACHMENTS=12/g' $TARGET_JAVA
-          echo "[DEBUG] Java Patch Result:"
-          grep "MAX_ATTACHMENTS" $TARGET_JAVA
 
-          # 2. 修改包名 (applicationId) 绕过缓存
-          TARGET_GRADLE="mastodon/build.gradle"
+          echo -e "\n[SYSTEM_CHECK] 2. 修改包名与版本号"
           sed -i "s/applicationId \"org.joinmastodon.android.moshinda\"/applicationId \"${{ env.NEW_APP_ID }}\"/g" $TARGET_GRADLE
-          echo "[DEBUG] Gradle ID Result:"
-          grep "applicationId" $TARGET_GRADLE
+          sed -i "s/versionName \"[^\"]*\"/versionName \"$NEW_VERSION\"/g" $TARGET_GRADLE
 
-          # 3. 精准更名 strings_mo.xml
-          TARGET_XML="mastodon/src/main/res/values/strings_mo.xml"
-          APP_NAME="${{ secrets.CUSTOM_APP_NAME }}"
+          echo -e "\n[SYSTEM_CHECK] 3. 注入应用名（支持中文）"
+          # 替换 strings_mo.xml，UTF-8 环境下 sed 对中文处理非常稳
           sed -i -E "s/(name=\"mo_app_name(_debug|_nightly)?\"[^>]*>)[^<]*/\1$APP_NAME/g" $TARGET_XML
-          echo "[DEBUG] XML Name Result:"
-          grep "mo_app_name" $TARGET_XML
-
-          # 4. 清单文件强制注入
-          TARGET_MANIFEST="mastodon/src/main/AndroidManifest.xml"
+          # 在清单文件中直接注入中文 label
           sed -i "s/android:label=\"@string\/mo_app_name\"/android:label=\"$APP_NAME\"/g" $TARGET_MANIFEST
-          echo "[DEBUG] Manifest Label Result:"
+          
+          echo "[DEBUG] 日志自检：确认中文是否被正确写入"
+          grep "mo_app_name" $TARGET_XML
           grep "android:label=" $TARGET_MANIFEST
 
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
@@ -71,32 +72,29 @@ jobs:
 
       - name: Locate and Sign APK
         run: |
-          # 查找生成的 Release APK
           UNSIGNED_APK=$(find . -path "*/build/outputs/apk/*" -name "*.apk" | grep -i "release" | grep -v "\-Signed.apk" | head -n 1)
-          if [ -z "$UNSIGNED_APK" ]; then echo "[ERROR] No APK found!"; exit 1; fi
+          [ -z "$UNSIGNED_APK" ] && exit 1
           
-          SIGNED_APK="${{ secrets.CUSTOM_APP_NAME }}-Signed.apk"
+          # 注意：文件名建议保持英文，安装后显示的名字才是中文
+          SIGNED_APK="MoshidonQX-Signed.apk"
           
-          # 使用 apksigner 进行签名
           $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign \
             --ks ${{ steps.android_keystore.outputs.filePath }} \
             --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
             --ks-key-alias custom-alias \
             --out "$SIGNED_APK" "$UNSIGNED_APK"
-          
-          echo "[DEBUG] APK Signed: $SIGNED_APK"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
-          name: "${{ secrets.CUSTOM_APP_NAME }} Release (New ID)"
+          name: "${{ secrets.CUSTOM_APP_NAME }} v2.3.0-QX.${{ github.run_number }}"
           body: |
-            ## MoshidonQX 终极重置版
-            - **包名 (ID)**: ${{ env.NEW_APP_ID }} (防止 ColorOS 缓存旧名)
-            - **应用名**: ${{ secrets.CUSTOM_APP_NAME }}
-            - **功能**: 解锁 12 张图
+            ## MoshidonQX 定制发布
+            - **应用名**：${{ secrets.CUSTOM_APP_NAME }}
+            - **版本**：2.3.0-QX.${{ github.run_number }}
+            - **修改**：12张图解锁、包名重置、全语言应用名覆盖
           files: |
-            ${{ secrets.CUSTOM_APP_NAME }}-Signed.apk
+            MoshidonQX-Signed.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
