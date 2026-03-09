@@ -1,7 +1,7 @@
 name: Build MoshidonQX (Professional Release)
 
 on:
-  workflow_dispatch: # 保持手动触发，避免浪费 Actions 额度
+  workflow_dispatch:
 
 jobs:
   build:
@@ -10,7 +10,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          ref: master # 锁定经典版分支
+          ref: master
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -26,37 +26,46 @@ jobs:
         id: android_keystore
         with:
           fileName: "release.jks"
-          encodedString: ${{ secrets.KEYSTORE_FILE }} 
+          encodedString: ${{ secrets.KEYSTORE_FILE }}
 
-      - name: MoshidonQX Brand & Feature Patch
+      - name: MoshidonQX Identity Patch
         run: |
           # 1. 破解 12 张图片限制
           TARGET_FILE="mastodon/src/main/java/org/joinmastodon/android/ui/viewcontrollers/ComposeMediaViewController.java"
           sed -i 's/MAX_ATTACHMENTS = 4/MAX_ATTACHMENTS = 12/g' $TARGET_FILE
           sed -i 's/MAX_ATTACHMENTS=4/MAX_ATTACHMENTS=12/g' $TARGET_FILE
           
-          # 2. 修改桌面应用名称为 MoshidonQX
+          # 2. 品牌更名
           STRINGS_FILE="mastodon/src/main/res/values/strings.xml"
           sed -i 's/>Moshidon</>MoshidonQX</g' $STRINGS_FILE
           
-          # 3. 初始化环境
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
 
       - name: Build Release APK
         run: |
           chmod +x gradlew
-          # 编译 Release 变体，开启 R8 优化
           ./gradlew :mastodon:assembleRelease --no-daemon
 
-      - name: Sign APK (MoshidonQX Identity)
+      - name: Sign APK (MoshidonQX Aggressive Search)
         run: |
-          # 找到生成的未签名 APK
-          UNSIGNED_APK=$(find mastodon/build/outputs/apk/release -name "*-unsigned.apk" | head -n 1)
+          # 改用递归搜索，只要是 release 目录下的 apk 统统不放过
+          # 同时排除掉已经带 signed 字样的文件
+          UNSIGNED_APK=$(find mastodon/build/outputs/apk -name "*.apk" | grep -i "release" | grep -v "signed" | head -n 1)
+          
+          if [ -z "$UNSIGNED_APK" ]; then
+            echo "错误：在构建目录中没找到任何 APK 文件！"
+            exit 1
+          fi
+          
+          echo "捕获到待签名文件: $UNSIGNED_APK"
           SIGNED_APK="MoshidonQX-Final-Signed.apk"
           
-          # 使用 apksigner 注入您的私有签名
-          $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign --ks ${{ steps.android_keystore.outputs.filePath }} \
-            --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} --out $SIGNED_APK $UNSIGNED_APK
+          # 增加 --ks-key-alias 确保匹配我们生成的 qx-alias
+          $ANDROID_SDK_ROOT/build-tools/34.0.0/apksigner sign \
+            --ks ${{ steps.android_keystore.outputs.filePath }} \
+            --ks-pass pass:${{ secrets.KEYSTORE_PASSWORD }} \
+            --ks-key-alias qx-alias \
+            --out $SIGNED_APK "$UNSIGNED_APK"
           
           echo "Success: MoshidonQX is now officially signed and ready."
 
