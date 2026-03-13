@@ -165,15 +165,22 @@ dependencies {
 	annotationProcessor 'org.parceler:parceler:1.1.12'
 	coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
 	implementation 'org.unifiedpush.android:connector:3.0.7'
-	// Media3 核心播放功能
-    implementation "androidx.media3:media3-exoplayer:1.1.1"
-    // Media3 自动识别视频格式（MP4/FLAC等）的解析器
-    implementation "androidx.media3:media3-extractor:1.1.1"
-    // 关键：将 OkHttp 和播放器打通，提升加载速度
-    implementation "androidx.media3:media3-datasource-okhttp:1.1.1"
-
 	androidTestImplementation 'androidx.test:core:1.5.0'
 	androidTestImplementation 'androidx.test.ext:junit:1.1.5'
 	androidTestImplementation 'androidx.test:runner:1.5.2'
 	androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
+	
+	// Media3 核心播放功能（排除引起冲突的 collection 和 concurrent）
+    implementation("androidx.media3:media3-exoplayer:1.1.1") {
+        exclude group: 'androidx.collection', module: 'collection'
+        exclude group: 'androidx.concurrent', module: 'concurrent-futures'
+    }
+    
+    implementation("androidx.media3:media3-extractor:1.1.1") {
+        exclude group: 'androidx.collection', module: 'collection'
+    }
+
+    implementation("androidx.media3:media3-datasource-okhttp:1.1.1") {
+        exclude group: 'androidx.collection', module: 'collection'
+    }
 }
