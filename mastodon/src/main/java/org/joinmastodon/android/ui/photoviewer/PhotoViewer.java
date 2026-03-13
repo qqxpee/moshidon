@@ -320,7 +320,40 @@ public class PhotoViewer implements ZoomPanView.Listener{
 			}
 		});
 	}
+	
+	/**
+	 * 处理权限申请结果，由 Fragment 调用 [cite: 1]
+	 */
+	public void onRequestPermissionsResult(String[] permissions, int[] grantResults){
+		if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+			doSaveCurrentFile();
+		} else if(!activity.shouldShowRequestPermissionRationale(Manifest.permission.WRITE_EXTERNAL_STORAGE)){
+			new M3AlertDialogBuilder(activity)
+					.setTitle(R.string.permission_required)
+					.setMessage(R.string.storage_permission_to_download)
+					.setPositiveButton(R.string.open_settings, (dialog, which)->activity.startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", activity.getPackageName(), null))))
+					.setNegativeButton(R.string.cancel, null)
+					.show();
+		}
+	}
 
+	/**
+	 * 当列表滚动时同步偏移视图 [cite: 1]
+	 */
+	public void offsetView(float x, float y){
+		pager.setTranslationX(pager.getTranslationX() + x);
+		pager.setTranslationY(pager.getTranslationY() + y);
+	}
+
+	/**
+	 * 清除工具栏菜单 [cite: 1]
+	 */
+	public void removeMenu(){
+		if (toolbar != null) {
+			toolbar.getMenu().clear();
+		}
+	}
+	
 	@Override
 	public void onTransitionAnimationUpdate(float translateX, float translateY, float scale){
 		listener.setTransitioningViewTransform(translateX, translateY, scale);
