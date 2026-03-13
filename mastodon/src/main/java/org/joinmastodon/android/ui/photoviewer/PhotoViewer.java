@@ -197,7 +197,7 @@ public class PhotoViewer implements ZoomPanView.Listener{
 		pager=new ViewPager2(activity);
 		pager.setAdapter(new PhotoViewAdapter());
 		pager.setCurrentItem(index, false);
-		pager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback()){
+		pager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback(){
 			@Override
 			public void onPageSelected(int position){
 				onPageChanged(position);
