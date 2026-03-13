@@ -170,18 +170,25 @@ dependencies {
 	androidTestImplementation 'androidx.test:runner:1.5.2'
 	androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.1'
 	
-	// Media3 核心播放功能（排除引起冲突的 collection 和 concurrent）
+	// Media3 核心播放器，排除所有与原有项目冲突的 Google 标准库
     implementation("androidx.media3:media3-exoplayer:1.1.1") {
         exclude group: 'androidx.collection', module: 'collection'
         exclude group: 'androidx.concurrent', module: 'concurrent-futures'
-		exclude group: 'com.google.guava', module: 'guava'
+        exclude group: 'com.google.guava', module: 'guava'
+        exclude group: 'com.google.guava', module: 'listenablefuture'
     }
     
+    // 媒体格式解析器
     implementation("androidx.media3:media3-extractor:1.1.1") {
         exclude group: 'androidx.collection', module: 'collection'
+        exclude group: 'com.google.guava', module: 'guava'
+        exclude group: 'com.google.guava', module: 'listenablefuture'
     }
 
+    // OkHttp 数据源（解决播放慢的关键）
     implementation("androidx.media3:media3-datasource-okhttp:1.1.1") {
         exclude group: 'androidx.collection', module: 'collection'
+        exclude group: 'com.google.guava', module: 'guava'
+        exclude group: 'com.google.guava', module: 'listenablefuture'
     }
 }
