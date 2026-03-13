@@ -165,6 +165,12 @@ dependencies {
 	annotationProcessor 'org.parceler:parceler:1.1.12'
 	coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
 	implementation 'org.unifiedpush.android:connector:3.0.7'
+	// Media3 核心播放功能
+    implementation "androidx.media3:media3-exoplayer:1.1.1"
+    // Media3 自动识别视频格式（MP4/FLAC等）的解析器
+    implementation "androidx.media3:media3-extractor:1.1.1"
+    // 关键：将 OkHttp 和播放器打通，提升加载速度
+    implementation "androidx.media3:media3-datasource-okhttp:1.1.1"
 
 	androidTestImplementation 'androidx.test:core:1.5.0'
 	androidTestImplementation 'androidx.test.ext:junit:1.1.5'
