@@ -145,9 +145,9 @@ public class ResizedImageRequestBody extends CountingRequestBody{
 			    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
 			        // 质量设为 90：这在专业摄影圈被视为“肉眼几乎不可见损耗”的上限
 			        // 体积依然能比 15MB 的 PNG 减少 80% 以上
-			        bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 90, out);
+			        bitmap.compress(Bitmap.CompressFormat.WEBP_LOSSY, 95, out);
 			    } else {
-			        bitmap.compress(Bitmap.CompressFormat.WEBP, 90, out);
+			        bitmap.compress(Bitmap.CompressFormat.WEBP, 95, out);
 			    }
 			    contentType = "image/webp"; 
 			}
