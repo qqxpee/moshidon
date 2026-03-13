@@ -13,7 +13,6 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
-import android.graphics.Bitmap;
 import android.graphics.Insets;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
@@ -125,7 +124,7 @@ public class PhotoViewer implements ZoomPanView.Listener {
 	private boolean uiVisible = true;
 	private AudioManager.OnAudioFocusChangeListener audioFocusListener = new AudioManager.OnAudioFocusChangeListener() {
 		@Override
-		public void onAudioFocusChanged(int focusChange) {
+		public void onAudioFocusChange(int focusChange) {
 			PhotoViewer.this.onAudioFocusChanged(focusChange);
 		}
 	};
@@ -162,12 +161,11 @@ public class PhotoViewer implements ZoomPanView.Listener {
 
 	public PhotoViewer(Activity activity, List<Attachment> attachments, int index, Status status, String accountID, Listener listener) {
 		this.activity = activity;
-		// 严格还原原始过滤逻辑
+		// 严格还原原始备份中的索引对应逻辑，并增加安全映射以防止越界闪退
 		Attachment targetAttachment = attachments.get(index);
 		this.attachments = attachments.stream().filter(a -> a.type == Attachment.Type.IMAGE || a.type == Attachment.Type.GIFV || a.type == Attachment.Type.VIDEO).collect(Collectors.toList());
-		// 关键点：重映射索引，防止点击即闪退
-		currentIndex = this.attachments.indexOf(targetAttachment);
-		if (currentIndex < 0) currentIndex = 0;
+		this.currentIndex = this.attachments.indexOf(targetAttachment);
+		if (this.currentIndex < 0) this.currentIndex = 0;
 		this.listener = listener;
 		this.status = status;
 		this.accountID = accountID;
@@ -192,6 +190,7 @@ public class PhotoViewer implements ZoomPanView.Listener {
 					DisplayCutout cutout = insets.getDisplayCutout();
 					Insets tappable = insets.getTappableElementInsets();
 					if (cutout != null) {
+						// Make controls extend beneath the cutout, and replace insets to avoid cutout insets being filled with "navigation bar color"
 						int leftInset = Math.max(0, cutout.getSafeInsetLeft() - tappable.left);
 						int rightInset = Math.max(0, cutout.getSafeInsetRight() - tappable.right);
 						toolbarWrap.setPadding(leftInset, 0, rightInset, 0);
@@ -341,7 +340,7 @@ public class PhotoViewer implements ZoomPanView.Listener {
 			@Override
 			public void onStartTrackingTouch(SeekBar seekBar) {
 				stopUpdatingVideoPosition();
-				if (!uiVisible)
+				if (!uiVisible) // If dragging started during hide animation
 					toggleUI();
 				windowView.removeCallbacks(uiAutoHider);
 			}
@@ -392,6 +391,7 @@ public class PhotoViewer implements ZoomPanView.Listener {
 	@Override
 	public void onStartSwipeToDismissTransition(float velocityY) {
 		pauseVideo();
+		// stop receiving input events to allow the user to interact with the underlying UI while the animation is still running
 		WindowManager.LayoutParams wlp = (WindowManager.LayoutParams) windowView.getLayoutParams();
 		wlp.flags |= WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
 		windowView.setSystemUiVisibility(windowView.getSystemUiVisibility() | (activity.getWindow().getDecorView().getSystemUiVisibility() & (View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR)));
@@ -498,7 +498,10 @@ public class PhotoViewer implements ZoomPanView.Listener {
 	}
 
 	/**
-	 * 当列表滚动时同步偏移视图
+	 * To be called when the list containing photo views is scrolled
+	 *
+	 * @param x
+	 * @param y
 	 */
 	public void offsetView(float x, float y) {
 		pager.setTranslationX(pager.getTranslationX() + x);
@@ -534,10 +537,12 @@ public class PhotoViewer implements ZoomPanView.Listener {
 
 	private void shareCurrentFile() {
 		Attachment att = attachments.get(pager.getCurrentItem());
+
 		if (att.type != Attachment.Type.IMAGE) {
 			shareAfterDownloading(att);
 			return;
 		}
+
 		UrlImageLoaderRequest req = new UrlImageLoaderRequest(att.url);
 		try {
 			File file = ImageCache.getInstance(activity).getFile(req);
@@ -549,8 +554,8 @@ public class PhotoViewer implements ZoomPanView.Listener {
 				@Override
 				public void run() {
 					File imageDir = new File(activity.getCacheDir(), ".");
-					File renamedFile = new File(imageDir, Uri.parse(att.url).getLastPathSegment());
-					file.renameTo(renamedFile);
+					File renamedFile;
+					file.renameTo(renamedFile = new File(imageDir, Uri.parse(att.url).getLastPathSegment()));
 					shareFile(renamedFile);
 				}
 			});
@@ -572,9 +577,6 @@ public class PhotoViewer implements ZoomPanView.Listener {
 		}
 	}
 
-	/**
-	 * 处理权限申请结果，由 Fragment 调用
-	 */
 	public void onRequestPermissionsResult(String[] permissions, int[] results) {
 		if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
 			doSaveCurrentFile();
@@ -611,10 +613,12 @@ public class PhotoViewer implements ZoomPanView.Listener {
 		String fileName = Uri.parse(att.url).getLastPathSegment();
 		if (Build.VERSION.SDK_INT >= 29) {
 			ContentValues values = new ContentValues();
+//			values.put(MediaStore.Downloads.DOWNLOAD_URI, att.url);
 			values.put(MediaStore.MediaColumns.DISPLAY_NAME, fileName);
 			values.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
 			String mime = mimeTypeForFileName(fileName);
-			if (mime != null) values.put(MediaStore.MediaColumns.MIME_TYPE, mime);
+			if (mime != null)
+				values.put(MediaStore.MediaColumns.MIME_TYPE, mime);
 			ContentResolver cr = activity.getContentResolver();
 			Uri itemUri = cr.insert(MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values);
 			return cr.openOutputStream(itemUri);
@@ -683,24 +687,32 @@ public class PhotoViewer implements ZoomPanView.Listener {
 
 	private void shareAfterDownloading(final Attachment att) {
 		final Uri uri = Uri.parse(att.url);
+
 		Toast.makeText(activity, R.string.downloading, Toast.LENGTH_SHORT).show();
+
 		MastodonAPIController.runInBackground(new Runnable() {
 			@Override
 			public void run() {
 				try {
 					OkHttpClient client = new OkHttpClient();
 					Request request = new Request.Builder().url(att.url).build();
+
 					Response response = client.newCall(request).execute();
-					if (!response.isSuccessful()) throw new IOException("" + response);
+					if (!response.isSuccessful()) {
+						throw new IOException("" + response);
+					}
+
 					File imageDir = new File(activity.getCacheDir(), ".");
 					InputStream inputStream = response.body().byteStream();
 					File file = new File(imageDir, uri.getLastPathSegment());
 					FileOutputStream outputStream = new FileOutputStream(file);
+
 					byte[] buffer = new byte[4096];
 					int bytesRead;
 					while ((bytesRead = inputStream.read(buffer)) != -1) {
 						outputStream.write(buffer, 0, bytesRead);
 					}
+
 					outputStream.close();
 					inputStream.close();
 					shareFile(file);
@@ -754,7 +766,8 @@ public class PhotoViewer implements ZoomPanView.Listener {
 		videoPlayPauseButton.setContentDescription(activity.getString(R.string.play));
 		stopUpdatingVideoPosition();
 		windowView.removeCallbacks(uiAutoHider);
-		// 捕捉当前帧作为背景，防止黑屏
+		// Some MediaPlayer implementations clear the texture when the app goes into background.
+		// This makes sure the frame on which the video was paused is retained on the screen.
 		Bitmap bitmap = holder.textureView.getBitmap();
 		if (bitmap != null) {
 			holder.wrap.setBackground(new BitmapDrawable(activity.getResources(), bitmap));
@@ -849,12 +862,20 @@ public class PhotoViewer implements ZoomPanView.Listener {
 
 			@Override
 			public void onButtonClick(int id) {
-				if (id == R.id.btn_boost && status != null) {
-					AccountSessionManager.get(accountID).getStatusInteractionController().setReblogged(status, !status.reblogged, null, r -> {});
-				} else if (id == R.id.btn_favorite && status != null) {
-					AccountSessionManager.get(accountID).getStatusInteractionController().setFavorited(status, !status.favourited, r -> {});
-				} else if (id == R.id.btn_bookmark && status != null) {
-					AccountSessionManager.get(accountID).getStatusInteractionController().setBookmarked(status, !status.bookmarked);
+				if (id == R.id.btn_boost) {
+					if (status != null) {
+						AccountSessionManager.get(accountID).getStatusInteractionController().setReblogged(status, !status.reblogged, null, r -> {
+						});
+					}
+				} else if (id == R.id.btn_favorite) {
+					if (status != null) {
+						AccountSessionManager.get(accountID).getStatusInteractionController().setFavorited(status, !status.favourited, r -> {
+						});
+					}
+				} else if (id == R.id.btn_bookmark) {
+					if (status != null) {
+						AccountSessionManager.get(accountID).getStatusInteractionController().setBookmarked(status, !status.bookmarked);
+					}
 				}
 			}
 		});
@@ -889,15 +910,49 @@ public class PhotoViewer implements ZoomPanView.Listener {
 
 	public interface Listener {
 		void setPhotoViewVisibility(int index, boolean visible);
+
+		/**
+		 * Find a view for transition, save a reference to it until <code>{@link #endPhotoViewTransition()}</code> is called,
+		 * and set up the view hierarchy for transition (the photo view may need to be drawn outside of the bounds of its parent).
+		 *
+		 * @param index          the index of the photo/page
+		 * @param outRect        output: the rect of the photo view <b>in screen coordinates</b>
+		 * @param outCornerRadius output: corner radiuses of the view [top-left, top-right, bottom-right, bottom-left]
+		 * @return true if the view was found and outRect and outCornerRadius are valid
+		 */
 		boolean startPhotoViewTransition(int index, @NonNull Rect outRect, @NonNull int[] outCornerRadius);
+
+		/**
+		 * Update the transformation parameters of the transitioning photo view.
+		 * Only called if a previous call to {@link #startPhotoViewTransition(int, Rect, int[])} returned true.
+		 *
+		 * @param translateX X translation
+		 * @param translateY Y translation
+		 * @param scale      X and Y scale
+		 */
 		void setTransitioningViewTransform(float translateX, float translateY, float scale);
+
+		/**
+		 * End the transition, returning all transformations to their initial state.
+		 */
 		void endPhotoViewTransition();
-		@Nullable Drawable getPhotoViewCurrentDrawable(int index);
+
+		/**
+		 * Get the current drawable that a photo view displays.
+		 *
+		 * @param index the index of the photo
+		 * @return the drawable, or null if the view doesn't exist
+		 */
+		@Nullable
+		Drawable getPhotoViewCurrentDrawable(int index);
+
 		void photoViewerDismissed();
+
 		void onRequestPermissions(String[] permissions);
 	}
 
 	private class PhotoViewAdapter extends RecyclerView.Adapter<BaseHolder> {
+
 		@NonNull
 		@Override
 		public BaseHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -1041,22 +1096,20 @@ public class PhotoViewer implements ZoomPanView.Listener {
 		public void prepareAndStartPlayer() {
 			if (player != null) return;
 			playerReady = false;
-			// 解决播放慢：使用 OkHttpDataSource 并设置全局客户端
+			// 核心优化：使用 OkHttpDataSource 避免握手卡顿
 			OkHttpDataSource.Factory dataSourceFactory = new OkHttpDataSource.Factory(new okhttp3.OkHttpClient());
 			player = new ExoPlayer.Builder(activity)
 					.setMediaSourceFactory(new DefaultMediaSourceFactory(dataSourceFactory))
 					.build();
 			players.add(player);
 			player.addListener(this);
-			
+
 			MediaItem mediaItem = MediaItem.fromUri(item.url);
 			player.setMediaItem(mediaItem);
 			if (surface != null) player.setVideoSurface(surface);
 			player.prepare();
-			
-			if (item.type == Attachment.Type.VIDEO) {
-				player.setRepeatMode(Player.REPEAT_MODE_OFF);
-			} else {
+
+			if (item.type != Attachment.Type.VIDEO) {
 				player.setRepeatMode(Player.REPEAT_MODE_ALL);
 			}
 			player.play();
@@ -1128,7 +1181,8 @@ public class PhotoViewer implements ZoomPanView.Listener {
 		}
 
 		@Override
-		public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surfaceTexture, int width, int height) {}
+		public void onSurfaceTextureSizeChanged(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
+		}
 
 		@Override
 		public boolean onSurfaceTextureDestroyed(@NonNull SurfaceTexture surfaceTexture) {
@@ -1141,7 +1195,7 @@ public class PhotoViewer implements ZoomPanView.Listener {
 
 		@Override
 		public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surfaceTexture) {
-			// 新帧渲染，移除背景占位图
+			// A new frame of video was rendered. Clear the thumbnail or paused frame.
 			if (player != null && player.isPlaying() && wrap.getBackground() != null) {
 				wrap.setBackground(null);
 			}
