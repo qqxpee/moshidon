@@ -162,8 +162,10 @@ public class PhotoViewer implements ZoomPanView.Listener {
 
 	public PhotoViewer(Activity activity, List<Attachment> attachments, int index, Status status, String accountID, Listener listener) {
 		this.activity = activity;
+		// 严格还原原始过滤逻辑
 		Attachment targetAttachment = attachments.get(index);
 		this.attachments = attachments.stream().filter(a -> a.type == Attachment.Type.IMAGE || a.type == Attachment.Type.GIFV || a.type == Attachment.Type.VIDEO).collect(Collectors.toList());
+		// 关键点：重映射索引，防止点击即闪退
 		currentIndex = this.attachments.indexOf(targetAttachment);
 		if (currentIndex < 0) currentIndex = 0;
 		this.listener = listener;
@@ -495,6 +497,9 @@ public class PhotoViewer implements ZoomPanView.Listener {
 		}
 	}
 
+	/**
+	 * 当列表滚动时同步偏移视图
+	 */
 	public void offsetView(float x, float y) {
 		pager.setTranslationX(pager.getTranslationX() + x);
 		pager.setTranslationY(pager.getTranslationY() + y);
@@ -567,6 +572,9 @@ public class PhotoViewer implements ZoomPanView.Listener {
 		}
 	}
 
+	/**
+	 * 处理权限申请结果，由 Fragment 调用
+	 */
 	public void onRequestPermissionsResult(String[] permissions, int[] results) {
 		if (results.length > 0 && results[0] == PackageManager.PERMISSION_GRANTED) {
 			doSaveCurrentFile();
@@ -746,6 +754,7 @@ public class PhotoViewer implements ZoomPanView.Listener {
 		videoPlayPauseButton.setContentDescription(activity.getString(R.string.play));
 		stopUpdatingVideoPosition();
 		windowView.removeCallbacks(uiAutoHider);
+		// 捕捉当前帧作为背景，防止黑屏
 		Bitmap bitmap = holder.textureView.getBitmap();
 		if (bitmap != null) {
 			holder.wrap.setBackground(new BitmapDrawable(activity.getResources(), bitmap));
@@ -1029,12 +1038,10 @@ public class PhotoViewer implements ZoomPanView.Listener {
 			}
 		}
 
-		// --- ExoPlayer 核心逻辑 ---
-
 		public void prepareAndStartPlayer() {
 			if (player != null) return;
 			playerReady = false;
-			// 解决播放慢：使用 OkHttpDataSource 避免握手卡顿
+			// 解决播放慢：使用 OkHttpDataSource 并设置全局客户端
 			OkHttpDataSource.Factory dataSourceFactory = new OkHttpDataSource.Factory(new okhttp3.OkHttpClient());
 			player = new ExoPlayer.Builder(activity)
 					.setMediaSourceFactory(new DefaultMediaSourceFactory(dataSourceFactory))
@@ -1114,8 +1121,6 @@ public class PhotoViewer implements ZoomPanView.Listener {
 			windowView.removeCallbacks(uiAutoHider);
 		}
 
-		// --- TextureView.SurfaceTextureListener ---
-
 		@Override
 		public void onSurfaceTextureAvailable(@NonNull SurfaceTexture surfaceTexture, int width, int height) {
 			this.surface = new Surface(surfaceTexture);
@@ -1136,6 +1141,7 @@ public class PhotoViewer implements ZoomPanView.Listener {
 
 		@Override
 		public void onSurfaceTextureUpdated(@NonNull SurfaceTexture surfaceTexture) {
+			// 新帧渲染，移除背景占位图
 			if (player != null && player.isPlaying() && wrap.getBackground() != null) {
 				wrap.setBackground(null);
 			}
